@@ -5,7 +5,7 @@ export async function calculateCompatibility(
   userProfile: UserProfile,
   matches: MatchProfile[]
 ): Promise<CompatibilityResult[]> {
-  const prompt = spark.llmPrompt`You are an expert dating compatibility analyst. Analyze the user's profile against potential matches and calculate compatibility scores.
+  const prompt = window.spark.llmPrompt`You are an expert dating compatibility analyst. Analyze the user's profile against potential matches and calculate compatibility scores.
 
 User Profile:
 ${JSON.stringify(userProfile, null, 2)}
@@ -37,7 +37,7 @@ Return ONLY valid JSON in this exact format (no other text):
   ]
 }`;
 
-  const response = await spark.llm(prompt, 'gpt-4o', true);
+  const response = await window.spark.llm(prompt, 'gpt-4o', true);
   const parsed = JSON.parse(response);
   return parsed.results;
 }
@@ -46,7 +46,7 @@ export async function generateDailyHoroscope(birthDate: string): Promise<Horosco
   const sign = getZodiacSign(birthDate);
   const today = new Date().toISOString().split('T')[0];
   
-  const prompt = spark.llmPrompt`Generate a personalized daily horoscope for someone born on ${birthDate} (${sign}).
+  const prompt = window.spark.llmPrompt`Generate a personalized daily horoscope for someone born on ${birthDate} (${sign}).
 
 Make it:
 - Specific and actionable (not generic)
@@ -59,7 +59,7 @@ Return ONLY valid JSON in this exact format:
   "reading": "string - the horoscope text"
 }`;
 
-  const response = await spark.llm(prompt, 'gpt-4o-mini', true);
+  const response = await window.spark.llm(prompt, 'gpt-4o-mini', true);
   const parsed = JSON.parse(response);
   
   return {
@@ -76,7 +76,7 @@ export async function generateSynastry(
   const userSign = getZodiacSign(userBirthDate);
   const matchSign = getZodiacSign(matchBirthDate);
   
-  const prompt = spark.llmPrompt`Analyze the astrological compatibility (synastry) between:
+  const prompt = window.spark.llmPrompt`Analyze the astrological compatibility (synastry) between:
 - Person 1: ${userSign} (born ${userBirthDate})
 - Person 2: ${matchSign} (born ${matchBirthDate})
 
@@ -90,7 +90,7 @@ Return ONLY valid JSON in this exact format:
   "explanation": "string - the explanation"
 }`;
 
-  const response = await spark.llm(prompt, 'gpt-4o-mini', true);
+  const response = await window.spark.llm(prompt, 'gpt-4o-mini', true);
   const parsed = JSON.parse(response);
   
   return {
@@ -105,7 +105,7 @@ export async function generateIcebreaker(
   userProfile: UserProfile,
   matchProfile: MatchProfile
 ): Promise<string> {
-  const prompt = spark.llmPrompt`Generate a personalized icebreaker message for starting a conversation.
+  const prompt = window.spark.llmPrompt`Generate a personalized icebreaker message for starting a conversation.
 
 Your profile: ${JSON.stringify({ name: userProfile.name, interests: userProfile.interests, values: userProfile.values })}
 Their profile: ${JSON.stringify({ name: matchProfile.name, interests: matchProfile.interests, bio: matchProfile.bio })}
@@ -117,7 +117,7 @@ Return ONLY valid JSON in this exact format:
   "message": "string - the icebreaker message"
 }`;
 
-  const response = await spark.llm(prompt, 'gpt-4o-mini', true);
+  const response = await window.spark.llm(prompt, 'gpt-4o-mini', true);
   const parsed = JSON.parse(response);
   return parsed.message;
 }
@@ -125,7 +125,7 @@ Return ONLY valid JSON in this exact format:
 export async function generateBio(
   profile: Partial<UserProfile>
 ): Promise<string> {
-  const prompt = spark.llmPrompt`Generate a short, engaging dating profile bio based on the following user details:
+  const prompt = window.spark.llmPrompt`Generate a short, engaging dating profile bio based on the following user details:
 
 Name: ${profile.name || 'Unknown'}
 Values: ${(profile.values || []).join(', ')}
@@ -142,7 +142,7 @@ Return ONLY valid JSON in this exact format:
   "bio": "string - the generated bio"
 }`;
 
-  const response = await spark.llm(prompt, 'gpt-4o-mini', true);
+  const response = await window.spark.llm(prompt, 'gpt-4o-mini', true);
   const parsed = JSON.parse(response);
   return parsed.bio;
 }

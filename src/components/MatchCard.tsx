@@ -62,7 +62,7 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
                   <h3 className="text-xl font-bold flex items-center gap-2">
                     {match.name}
                     {match.livenessVerified && (
-                      <ShieldCheck size={18} weight="fill" className="text-green-600" title="Liveness Verified" />
+                      <ShieldCheck size={18} weight="fill" className="text-green-600" />
                     )}
                     {zodiacSign && (
                       <span className="text-sm font-normal text-muted-foreground">
@@ -138,7 +138,7 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
                 <DialogTitle className="text-2xl flex items-center gap-2">
                   {match.name}
                   {match.livenessVerified && (
-                    <ShieldCheck size={20} weight="fill" className="text-green-600" title="Liveness Verified" />
+                    <ShieldCheck size={20} weight="fill" className="text-green-600" />
                   )}
                   {zodiacSign && (
                     <span className="text-base font-normal text-muted-foreground">
