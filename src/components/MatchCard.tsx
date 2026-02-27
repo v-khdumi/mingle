@@ -17,6 +17,8 @@ interface MatchCardProps {
   userProfile: UserProfile;
 }
 
+const CHAT_UNLOCK_THRESHOLD = 0.70;
+
 export function MatchCard({ match, compatibility, userProfile }: MatchCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [icebreaker, setIcebreaker] = useState<string | null>(null);
@@ -255,7 +257,7 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
             )}
 
             <div className="border-t pt-4 space-y-3">
-              {compatibility.score >= 0.70 ? (
+              {compatibility.score >= CHAT_UNLOCK_THRESHOLD ? (
                 <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800 mb-2">
                   💬 Chat unlocked! Your compatibility score exceeds the 70% threshold.
                 </div>

@@ -17,6 +17,8 @@ interface ProfileFormProps {
   onComplete: (profile: UserProfile) => void;
 }
 
+const FIRST_PROFILE_EDIT_STEP = 4;
+
 const COMMON_INTERESTS = [
   'Travel', 'Cooking', 'Hiking', 'Reading', 'Photography', 'Music', 'Art',
   'Fitness', 'Yoga', 'Dancing', 'Gaming', 'Writing', 'Movies', 'Sports'
@@ -33,7 +35,7 @@ const LIFESTYLE_OPTIONS = [
 ];
 
 export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
-  const [step, setStep] = useState(initialProfile ? 4 : 1);
+  const [step, setStep] = useState(initialProfile ? FIRST_PROFILE_EDIT_STEP : 1);
   const [isGeneratingBio, setIsGeneratingBio] = useState(false);
   const [profile, setProfile] = useState<Partial<UserProfile>>(
     initialProfile || {
