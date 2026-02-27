@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Heart, Sparkle, ChatCircle, User } from '@phosphor-icons/react';
+import { Heart, Sparkle, ChatCircle, User, ShieldCheck } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { getZodiacSign } from '@/lib/sampleData';
 import { generateIcebreaker } from '@/lib/ai';
@@ -16,6 +16,8 @@ interface MatchCardProps {
   compatibility: CompatibilityResult;
   userProfile: UserProfile;
 }
+
+const CHAT_UNLOCK_THRESHOLD = 0.70;
 
 export function MatchCard({ match, compatibility, userProfile }: MatchCardProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,6 +61,9 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
                 <div>
                   <h3 className="text-xl font-bold flex items-center gap-2">
                     {match.name}
+                    {match.livenessVerified && (
+                      <ShieldCheck size={18} weight="fill" className="text-green-600" title="Liveness Verified" />
+                    )}
                     {zodiacSign && (
                       <span className="text-sm font-normal text-muted-foreground">
                         {zodiacSign}
@@ -132,6 +137,9 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
               <div>
                 <DialogTitle className="text-2xl flex items-center gap-2">
                   {match.name}
+                  {match.livenessVerified && (
+                    <ShieldCheck size={20} weight="fill" className="text-green-600" title="Liveness Verified" />
+                  )}
                   {zodiacSign && (
                     <span className="text-base font-normal text-muted-foreground">
                       {zodiacSign}
@@ -249,6 +257,15 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
             )}
 
             <div className="border-t pt-4 space-y-3">
+              {compatibility.score >= CHAT_UNLOCK_THRESHOLD ? (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800 mb-2">
+                  💬 Chat unlocked! Your compatibility score exceeds the 70% threshold.
+                </div>
+              ) : (
+                <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground mb-2">
+                  🔒 Chat is locked. A compatibility score above 70% is required to start a conversation.
+                </div>
+              )}
               <Button
                 className="w-full bg-gradient-to-r from-primary to-accent"
                 onClick={handleGenerateIcebreaker}

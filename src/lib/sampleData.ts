@@ -17,6 +17,10 @@ export const sampleMatches: MatchProfile[] = [
     optInAstrology: true,
     optInAttractiveness: false,
     optInSalary: false,
+    ageConfirmed: true,
+    photoUploaded: true,
+    livenessVerified: true,
+    consentGiven: true,
   },
   {
     id: '2',
@@ -33,6 +37,10 @@ export const sampleMatches: MatchProfile[] = [
     optInAstrology: true,
     optInAttractiveness: true,
     optInSalary: false,
+    ageConfirmed: true,
+    photoUploaded: true,
+    livenessVerified: true,
+    consentGiven: true,
   },
   {
     id: '3',
@@ -50,6 +58,10 @@ export const sampleMatches: MatchProfile[] = [
     optInAstrology: true,
     optInAttractiveness: false,
     optInSalary: false,
+    ageConfirmed: true,
+    photoUploaded: true,
+    livenessVerified: true,
+    consentGiven: true,
   },
   {
     id: '4',
@@ -67,6 +79,10 @@ export const sampleMatches: MatchProfile[] = [
     optInAstrology: false,
     optInAttractiveness: true,
     optInSalary: true,
+    ageConfirmed: true,
+    photoUploaded: true,
+    livenessVerified: true,
+    consentGiven: true,
   },
   {
     id: '5',
@@ -85,6 +101,10 @@ export const sampleMatches: MatchProfile[] = [
     optInAstrology: true,
     optInAttractiveness: false,
     optInSalary: false,
+    ageConfirmed: true,
+    photoUploaded: true,
+    livenessVerified: true,
+    consentGiven: true,
   },
   {
     id: '6',
@@ -102,6 +122,10 @@ export const sampleMatches: MatchProfile[] = [
     optInAstrology: false,
     optInAttractiveness: true,
     optInSalary: true,
+    ageConfirmed: true,
+    photoUploaded: true,
+    livenessVerified: false,
+    consentGiven: true,
   },
   {
     id: '7',
@@ -120,6 +144,10 @@ export const sampleMatches: MatchProfile[] = [
     optInAstrology: true,
     optInAttractiveness: false,
     optInSalary: false,
+    ageConfirmed: true,
+    photoUploaded: true,
+    livenessVerified: true,
+    consentGiven: true,
   },
   {
     id: '8',
@@ -136,6 +164,10 @@ export const sampleMatches: MatchProfile[] = [
     optInAstrology: true,
     optInAttractiveness: true,
     optInSalary: false,
+    ageConfirmed: true,
+    photoUploaded: true,
+    livenessVerified: true,
+    consentGiven: true,
   },
 ];
 

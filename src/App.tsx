@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Skeleton } from './components/ui/skeleton';
-import { Heart, Moon, User, PencilSimple, Sparkle } from '@phosphor-icons/react';
+import { Heart, Moon, User, PencilSimple, Sparkle, ShieldCheck, Camera, Envelope } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { motion } from 'framer-motion';
@@ -240,6 +240,29 @@ function App() {
               <h3 className="text-xl font-bold mb-4">Your Profile</h3>
               
               <div className="space-y-4">
+                {(userProfile.livenessVerified || userProfile.photoUploaded || userProfile.consentGiven) && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-2">Trust Badges</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.photoUploaded && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                          <Camera size={12} /> Photo Verified
+                        </span>
+                      )}
+                      {userProfile.livenessVerified && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                          <ShieldCheck size={12} /> Liveness Verified
+                        </span>
+                      )}
+                      {userProfile.consentGiven && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                          <Envelope size={12} /> Consent Given
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <h4 className="font-semibold text-sm text-muted-foreground mb-1">Name</h4>
                   <p>{userProfile.name}</p>

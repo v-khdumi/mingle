@@ -121,3 +121,28 @@ Return ONLY valid JSON in this exact format:
   const parsed = JSON.parse(response);
   return parsed.message;
 }
+
+export async function generateBio(
+  profile: Partial<UserProfile>
+): Promise<string> {
+  const prompt = spark.llmPrompt`Generate a short, engaging dating profile bio based on the following user details:
+
+Name: ${profile.name || 'Unknown'}
+Values: ${(profile.values || []).join(', ')}
+Interests: ${(profile.interests || []).join(', ')}
+Lifestyle: ${(profile.lifestyle || []).join(', ')}
+Industry: ${profile.industry || 'Not specified'}
+Education: ${profile.education || 'Not specified'}
+Languages: ${(profile.languages || []).join(', ')}
+
+Create a warm, authentic 2-3 sentence bio that highlights personality and interests. Make it feel natural and approachable, not generic. Keep it under 200 characters.
+
+Return ONLY valid JSON in this exact format:
+{
+  "bio": "string - the generated bio"
+}`;
+
+  const response = await spark.llm(prompt, 'gpt-4o-mini', true);
+  const parsed = JSON.parse(response);
+  return parsed.bio;
+}
