@@ -11,7 +11,8 @@ import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Skeleton } from './components/ui/skeleton';
 import { Heart, Moon, User, PencilSimple, Sparkle } from '@phosphor-icons/react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 import { motion } from 'framer-motion';
 
 function App() {
