@@ -19,6 +19,11 @@ export interface UserProfile {
   optInAstrology: boolean;
   optInAttractiveness: boolean;
   optInSalary: boolean;
+
+  ageConfirmed: boolean;
+  photoUploaded: boolean;
+  livenessVerified: boolean;
+  consentGiven: boolean;
 }
 
 export interface MatchProfile extends UserProfile {
