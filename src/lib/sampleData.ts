@@ -1,0 +1,159 @@
+import { MatchProfile } from './types';
+
+export const sampleMatches: MatchProfile[] = [
+  {
+    id: '1',
+    name: 'Elena Popescu',
+    bio: 'Software engineer by day, salsa dancer by night. Love exploring new restaurants and weekend hiking trips.',
+    birthDate: '1994-03-15',
+    values: ['Honesty', 'Growth', 'Family'],
+    interests: ['Dancing', 'Hiking', 'Cooking', 'Travel'],
+    lifestyle: ['Active', 'Social', 'Health-conscious'],
+    workSchedule: 'Flexible (9-6 with remote options)',
+    industry: 'Technology',
+    education: 'Master\'s Degree',
+    languages: ['Romanian', 'English', 'Spanish'],
+    dietaryPreferences: 'Vegetarian',
+    optInAstrology: true,
+    optInAttractiveness: false,
+    optInSalary: false,
+  },
+  {
+    id: '2',
+    name: 'Andrei Ionescu',
+    bio: 'Creative director passionate about design and photography. Always seeking the next adventure and good coffee.',
+    birthDate: '1992-07-22',
+    values: ['Creativity', 'Authenticity', 'Adventure'],
+    interests: ['Photography', 'Design', 'Coffee', 'Art galleries', 'Travel'],
+    lifestyle: ['Creative', 'Adventurous', 'Urban explorer'],
+    workSchedule: 'Project-based (often evenings)',
+    industry: 'Creative/Media',
+    education: 'Bachelor\'s Degree',
+    languages: ['Romanian', 'English', 'Italian'],
+    optInAstrology: true,
+    optInAttractiveness: true,
+    optInSalary: false,
+  },
+  {
+    id: '3',
+    name: 'Maria Dumitrescu',
+    bio: 'Psychology researcher with a love for books, meditation, and meaningful conversations. Introvert with deep passions.',
+    birthDate: '1995-11-08',
+    values: ['Empathy', 'Knowledge', 'Mindfulness'],
+    interests: ['Reading', 'Psychology', 'Meditation', 'Writing', 'Nature walks'],
+    lifestyle: ['Introspective', 'Balanced', 'Mindful'],
+    workSchedule: 'Regular hours (9-5)',
+    industry: 'Education/Research',
+    education: 'PhD',
+    languages: ['Romanian', 'English', 'French'],
+    dietaryPreferences: 'Pescatarian',
+    optInAstrology: true,
+    optInAttractiveness: false,
+    optInSalary: false,
+  },
+  {
+    id: '4',
+    name: 'Alexandru Radu',
+    bio: 'Entrepreneur building sustainable tech solutions. Marathon runner, podcast enthusiast, and eternal optimist.',
+    birthDate: '1990-01-30',
+    values: ['Innovation', 'Sustainability', 'Optimism'],
+    interests: ['Running', 'Entrepreneurship', 'Podcasts', 'Technology', 'Sustainability'],
+    lifestyle: ['Driven', 'Health-focused', 'Early riser'],
+    workSchedule: 'Irregular (startup life)',
+    industry: 'Technology/Startup',
+    education: 'MBA',
+    languages: ['Romanian', 'English', 'German'],
+    salaryRange: '€50k-80k',
+    optInAstrology: false,
+    optInAttractiveness: true,
+    optInSalary: true,
+  },
+  {
+    id: '5',
+    name: 'Ioana Stanciu',
+    bio: 'Medical professional dedicated to helping others. Love yoga, traveling to warm destinations, and Sunday brunches.',
+    birthDate: '1993-05-19',
+    values: ['Compassion', 'Health', 'Balance'],
+    interests: ['Yoga', 'Medicine', 'Travel', 'Brunch', 'Beach destinations'],
+    lifestyle: ['Compassionate', 'Balanced', 'Health-conscious'],
+    workSchedule: 'Shifts (variable)',
+    industry: 'Healthcare',
+    education: 'Medical Degree',
+    languages: ['Romanian', 'English'],
+    dietaryPreferences: 'Flexitarian',
+    height: '165cm',
+    optInAstrology: true,
+    optInAttractiveness: false,
+    optInSalary: false,
+  },
+  {
+    id: '6',
+    name: 'Cristian Mihăilescu',
+    bio: 'Finance analyst who loves numbers and patterns. Enjoy chess, jazz music, and exploring craft beer spots.',
+    birthDate: '1991-09-12',
+    values: ['Logic', 'Stability', 'Curiosity'],
+    interests: ['Chess', 'Jazz', 'Craft beer', 'Finance', 'Strategy games'],
+    lifestyle: ['Analytical', 'Methodical', 'Curious'],
+    workSchedule: 'Regular hours (8-5)',
+    industry: 'Finance',
+    education: 'Master\'s Degree',
+    languages: ['Romanian', 'English'],
+    salaryRange: '€40k-60k',
+    optInAstrology: false,
+    optInAttractiveness: true,
+    optInSalary: true,
+  },
+  {
+    id: '7',
+    name: 'Diana Georgescu',
+    bio: 'Environmental scientist fighting for a greener future. Passionate about cycling, gardening, and zero-waste living.',
+    birthDate: '1996-04-03',
+    values: ['Sustainability', 'Activism', 'Community'],
+    interests: ['Cycling', 'Gardening', 'Environmental activism', 'Zero-waste', 'Farmers markets'],
+    lifestyle: ['Eco-conscious', 'Active', 'Community-oriented'],
+    workSchedule: 'Field work (flexible)',
+    industry: 'Environmental/NGO',
+    education: 'Master\'s Degree',
+    languages: ['Romanian', 'English', 'Portuguese'],
+    dietaryPreferences: 'Vegan',
+    height: '170cm',
+    optInAstrology: true,
+    optInAttractiveness: false,
+    optInSalary: false,
+  },
+  {
+    id: '8',
+    name: 'Vlad Munteanu',
+    bio: 'Musician and music teacher spreading the joy of sound. Rock climber, vinyl collector, and live music enthusiast.',
+    birthDate: '1989-12-25',
+    values: ['Expression', 'Passion', 'Community'],
+    interests: ['Music', 'Rock climbing', 'Vinyl records', 'Live concerts', 'Teaching'],
+    lifestyle: ['Creative', 'Passionate', 'Adventurous'],
+    workSchedule: 'Afternoons/evenings (teaching)',
+    industry: 'Education/Arts',
+    education: 'Bachelor\'s Degree',
+    languages: ['Romanian', 'English'],
+    optInAstrology: true,
+    optInAttractiveness: true,
+    optInSalary: false,
+  },
+];
+
+export function getZodiacSign(birthDate: string): string {
+  const date = new Date(birthDate);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+
+  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return 'Aries';
+  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return 'Taurus';
+  if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return 'Gemini';
+  if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return 'Cancer';
+  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return 'Leo';
+  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return 'Virgo';
+  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return 'Libra';
+  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return 'Scorpio';
+  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return 'Sagittarius';
+  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return 'Capricorn';
+  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return 'Aquarius';
+  return 'Pisces';
+}
