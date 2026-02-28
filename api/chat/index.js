@@ -22,8 +22,9 @@ module.exports = async function (context, req) {
     return;
   }
 
-  const deploymentName = model || "gpt-4o-mini";
-  const apiVersion = "2024-08-01-preview";
+  const ALLOWED_MODELS = ["gpt-4o", "gpt-4o-mini"];
+  const deploymentName = ALLOWED_MODELS.includes(model) ? model : "gpt-4o-mini";
+  const apiVersion = "2024-10-21";
   const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${encodeURIComponent(deploymentName)}/chat/completions?api-version=${apiVersion}`;
 
   const messages = [{ role: "user", content: prompt }];
