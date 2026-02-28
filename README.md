@@ -16,28 +16,26 @@ Right now, this is just a starting point — the perfect place to begin building
 
 Deploy the Mingle app to Azure Static Web Apps using one of the options below.
 
-### Option A — Custom template editor (recommended)
+### Option A — One-click deploy (recommended)
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fv-khdumi%2Fmingle%2Fmain%2Fazuredeploy.json)
 
-1. Click the button above (or open the [Azure Portal Custom Deployment](https://portal.azure.com/#create/Microsoft.Template) page).
+Click the button above to deploy all required Azure resources automatically.
+
+### Option B — Custom template editor
+
+1. Open the [Azure Portal Custom Deployment](https://portal.azure.com/#create/Microsoft.Template) page.
 2. Click **Build your own template in the editor**.
 3. Copy the contents of [`azuredeploy.json`](azuredeploy.json) and paste them into the editor.
 4. Click **Save**, fill in the parameters, then click **Review + create**.
-
-### Option B — One-click deploy (public repos only)
-
-> **Note:** The link below requires the repository to be **public** so Azure can fetch the template directly. If the repo is private you will see a CORS / download error — use Option A or the CLI instead.
-
-```
-https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fv-khdumi%2Fmingle%2Fmain%2Fazuredeploy.json
-```
 
 ### What gets deployed
 
 | Resource | Type | Purpose |
 |----------|------|---------|
 | Azure Static Web App | `Microsoft.Web/staticSites` | Hosts the React SPA with global CDN, free SSL, and staging environments for PRs |
+
+The template also includes a `staticwebapp.config.json` that configures SPA navigation fallback routing and security headers.
 
 ### Prerequisites
 
@@ -46,7 +44,7 @@ https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.github
 
 ### Setup steps
 
-1. **Deploy the infrastructure** — use Option A (recommended), Option B (public repos only), or the Azure CLI command below.
+1. **Deploy the infrastructure** — use Option A (recommended), Option B, or the Azure CLI command below.
 2. **Copy the deployment token** — from the Azure Portal, open the Static Web App resource → **Manage deployment token**.
 3. **Add the token as a GitHub secret** — go to your repo → **Settings → Secrets and variables → Actions** → create `AZURE_STATIC_WEB_APPS_API_TOKEN` with the deployment token value.
 4. **Push to `main`** — the GitHub Actions workflow (`.github/workflows/azure-deploy.yml`) will build and deploy automatically.
