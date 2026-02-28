@@ -41,7 +41,7 @@
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "URL of the GitHub repository (e.g. https://github.com/user/mingle). Leave empty if deploying manually."
+        "description": "URL of the GitHub repository (e.g. https://github.com/user/mingle). Required for GitHub integration."
       }
     },
     "repositoryBranch": {
@@ -49,6 +49,13 @@
       "defaultValue": "main",
       "metadata": {
         "description": "Branch to deploy from."
+      }
+    },
+    "repositoryToken": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "GitHub personal access token (classic) with repo and workflow scopes. Required for automatic CI/CD setup."
       }
     },
     "appLocation": {
@@ -123,12 +130,12 @@
       "properties": {
         "repositoryUrl": "[if(empty(parameters('repositoryUrl')), json('null'), parameters('repositoryUrl'))]",
         "branch": "[parameters('repositoryBranch')]",
+        "repositoryToken": "[if(empty(parameters('repositoryToken')), json('null'), parameters('repositoryToken'))]",
         "buildProperties": {
           "appLocation": "[parameters('appLocation')]",
           "apiLocation": "api",
           "outputLocation": "[parameters('outputLocation')]",
-          "appBuildCommand": "npm run build",
-          "skipGithubActionWorkflowGeneration": true
+          "appBuildCommand": "npm run build"
         }
       }
     },
