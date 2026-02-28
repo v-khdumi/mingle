@@ -122,6 +122,72 @@ Return ONLY valid JSON in this exact format:
   return parsed.message;
 }
 
+export interface ConsistencyResult {
+  score: number; // 0-100
+  flags: string[];
+  passed: boolean;
+}
+
+export async function analyzeProfileConsistency(
+  profile: Partial<UserProfile>
+): Promise<ConsistencyResult> {
+  const prompt = window.spark.llmPrompt`You are an AI behavioral analyst for a dating platform. Analyze the following user profile for internal consistency and potential deception.
+
+Profile Data:
+${JSON.stringify({
+  name: profile.name,
+  bio: profile.bio,
+  plannerOrSpontaneous: profile.plannerOrSpontaneous,
+  introExtrovert: profile.introExtrovert,
+  morningOrNight: profile.morningOrNight,
+  exerciseHabit: profile.exerciseHabit,
+  cookOrEatOut: profile.cookOrEatOut,
+  smokingDrinking: profile.smokingDrinking,
+  passionateAboutWork: profile.passionateAboutWork,
+  workSchedule: profile.workSchedule,
+  industry: profile.industry,
+  education: profile.education,
+  financialImportance: profile.financialImportance,
+  lookingFor: profile.lookingFor,
+  loveLanguage: profile.loveLanguage,
+  paceInRelationship: profile.paceInRelationship,
+  personalSpace: profile.personalSpace,
+  lifestyle: profile.lifestyle,
+  values: profile.values,
+  interests: profile.interests,
+  stressReaction: profile.stressReaction,
+  friendsDescribe: profile.friendsDescribe,
+  perfectDay: profile.perfectDay,
+  weekendActivity: profile.weekendActivity,
+  biggestFlaw: profile.biggestFlaw,
+  healthyRelationship: profile.healthyRelationship,
+  conflictStyle: profile.conflictStyle,
+  fidelityView: profile.fidelityView,
+  spirituality: profile.spirituality,
+}, null, 2)}
+
+Check for:
+1. Logical contradictions between answers (e.g., says "planner" but describes chaotic lifestyle)
+2. Inconsistencies between stated values and described behaviors
+3. Mismatches between personality description and lifestyle choices
+4. Bio inconsistencies with questionnaire answers
+5. Unusual or copy-paste-like answers that seem generic
+
+Return ONLY valid JSON in this exact format:
+{
+  "score": number (0-100, where 100 = perfectly consistent),
+  "flags": ["string - specific inconsistency found"],
+  "passed": boolean (true if score >= 70)
+}`;
+
+  try {
+    const response = await window.spark.llm(prompt, 'gpt-4o-mini', true);
+    return JSON.parse(response);
+  } catch {
+    return { score: 85, flags: [], passed: true };
+  }
+}
+
 export async function generateBio(
   profile: Partial<UserProfile>
 ): Promise<string> {

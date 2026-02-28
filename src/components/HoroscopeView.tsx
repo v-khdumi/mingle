@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Moon, Sparkle } from '@phosphor-icons/react';
 import { generateDailyHoroscope, generateSynastry } from '@/lib/ai';
 import { HoroscopeReading, SynastryReading, MatchProfile } from '@/lib/types';
+import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -14,6 +15,7 @@ interface HoroscopeViewProps {
 }
 
 export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
+  const { t } = useI18n();
   const [horoscope, setHoroscope] = useState<HoroscopeReading | null>(null);
   const [synastry, setSynastry] = useState<SynastryReading | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string>('');
@@ -30,7 +32,7 @@ export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
       const reading = await generateDailyHoroscope(birthDate);
       setHoroscope(reading);
     } catch (error) {
-      toast.error('Failed to load horoscope');
+      toast.error(t.horoscope.failedLoad);
     } finally {
       setIsLoading(false);
     }
@@ -39,7 +41,7 @@ export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
   const loadSynastry = async () => {
     const match = matches.find((m) => m.id === selectedMatchId);
     if (!match?.birthDate) {
-      toast.error('This match has not provided their birth date');
+      toast.error(t.horoscope.noBirthDate);
       return;
     }
 
@@ -48,7 +50,7 @@ export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
       const reading = await generateSynastry(birthDate, match.birthDate);
       setSynastry(reading);
     } catch (error) {
-      toast.error('Failed to load synastry');
+      toast.error(t.horoscope.failedSynastry);
     } finally {
       setIsSynastryLoading(false);
     }
@@ -64,7 +66,7 @@ export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
             <Moon size={24} weight="duotone" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Daily Horoscope</h2>
+            <h2 className="text-2xl font-bold">{t.horoscope.dailyTitle}</h2>
             {horoscope && (
               <p className="text-sm text-muted-foreground">
                 {horoscope.sign} - {new Date(horoscope.date).toLocaleDateString()}
@@ -91,9 +93,9 @@ export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
               <Sparkle size={24} weight="duotone" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">Synastry Reading</h2>
+              <h2 className="text-2xl font-bold">{t.horoscope.synastryTitle}</h2>
               <p className="text-sm text-muted-foreground">
-                Check astrological compatibility with your matches
+                {t.horoscope.synastryDesc}
               </p>
             </div>
           </div>
@@ -102,7 +104,7 @@ export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
             <div className="flex gap-3">
               <Select value={selectedMatchId} onValueChange={setSelectedMatchId}>
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select a match" />
+                  <SelectValue placeholder={t.horoscope.selectMatch} />
                 </SelectTrigger>
                 <SelectContent>
                   {matchesWithBirthDate.map((match) => (
@@ -117,7 +119,7 @@ export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
                 onClick={loadSynastry}
                 disabled={!selectedMatchId || isSynastryLoading}
               >
-                {isSynastryLoading ? 'Reading...' : 'Read Synastry'}
+                {isSynastryLoading ? t.horoscope.reading : t.horoscope.readSynastry}
               </Button>
             </div>
 

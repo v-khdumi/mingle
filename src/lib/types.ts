@@ -24,6 +24,57 @@ export interface UserProfile {
   photoUploaded: boolean;
   livenessVerified: boolean;
   consentGiven: boolean;
+
+  // Personality (Step 4 extended)
+  friendsDescribe?: string;
+  proudestAchievement?: string;
+  plannerOrSpontaneous?: string;
+  stressReaction?: string;
+  whatMakesYouLaugh?: string;
+  coreValue?: string;
+  introExtrovert?: string;
+  biggestFlaw?: string;
+
+  // Lifestyle extended (Step 5)
+  perfectDay?: string;
+  morningOrNight?: string;
+  exerciseHabit?: string;
+  weekendActivity?: string;
+  pets?: string;
+  cookOrEatOut?: string;
+  smokingDrinking?: string;
+  spirituality?: string;
+
+  // Career extended (Step 6)
+  passionateAboutWork?: string;
+  biggestDream?: string;
+  financialImportance?: number;
+  travelExperience?: string;
+
+  // Relationships (Step 7)
+  lookingFor?: string;
+  healthyRelationship?: string;
+  partnerQuality?: string;
+  conflictStyle?: string;
+  loveLanguage?: string;
+  wantChildren?: string;
+
+  // Compatibility & Deal-Breakers (Step 8)
+  attractiveQuality?: string;
+  dealBreaker?: string;
+  longDistance?: string;
+  fidelityView?: string;
+  paceInRelationship?: string;
+  personalSpace?: string;
+
+  // Fun & Essence (Step 9)
+  lifeAsMovie?: string;
+  surprisingFact?: string;
+  ifCouldntFail?: string;
+
+  // AI-generated scores
+  authenticityScore?: number;
+  consistencyFlags?: string[];
 }
 
 export interface MatchProfile extends UserProfile {
