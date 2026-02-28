@@ -60,7 +60,7 @@ export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5">
+      <Card className="p-6 glass-accent rounded-2xl">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
             <Moon size={24} weight="duotone" />
@@ -87,7 +87,7 @@ export function HoroscopeView({ birthDate, matches }: HoroscopeViewProps) {
       </Card>
 
       {matchesWithBirthDate.length > 0 && (
-        <Card className="p-6">
+        <Card className="p-6 glass-card rounded-2xl">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white">
               <Sparkle size={24} weight="duotone" />

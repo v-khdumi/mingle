@@ -50,11 +50,11 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
         transition={{ duration: 0.3 }}
       >
         <Card
-          className="p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer border-2 hover:border-accent/50"
+          className="p-6 glass-card rounded-2xl hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer hover:border-accent/30"
           onClick={() => setIsOpen(true)}
         >
           <div className="flex gap-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white flex-shrink-0">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-primary/20">
               <User size={40} weight="duotone" />
             </div>
 
@@ -130,7 +130,7 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
       </motion.div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto glass-strong rounded-2xl">
           <DialogHeader>
             <div className="flex items-center gap-4 mb-2">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
@@ -156,7 +156,7 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
           </DialogHeader>
 
           <div className="space-y-6 mt-4">
-            <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg">
+            <div className="flex items-center gap-4 p-4 glass-accent rounded-xl">
               <div className="relative w-20 h-20">
                 <svg className="w-full h-full -rotate-90">
                   <circle

@@ -38,6 +38,27 @@ const LIFESTYLE_OPTIONS = [
 
 export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
   const { t } = useI18n();
+
+  const COMMON_VALUES_MAP: Record<string, string> = {
+    'Honesty': t.form.tagHonesty, 'Growth': t.form.tagGrowth, 'Family': t.form.tagFamily,
+    'Creativity': t.form.tagCreativity, 'Adventure': t.form.tagAdventure, 'Empathy': t.form.tagEmpathy,
+    'Authenticity': t.form.tagAuthenticity, 'Mindfulness': t.form.tagMindfulness, 'Innovation': t.form.tagInnovation,
+    'Compassion': t.form.tagCompassion, 'Optimism': t.form.tagOptimism, 'Stability': t.form.tagStability,
+  };
+  const COMMON_INTERESTS_MAP: Record<string, string> = {
+    'Travel': t.form.tagTravel, 'Cooking': t.form.tagCooking, 'Hiking': t.form.tagHiking,
+    'Reading': t.form.tagReading, 'Photography': t.form.tagPhotography, 'Music': t.form.tagMusic,
+    'Art': t.form.tagArt, 'Fitness': t.form.tagFitness, 'Yoga': t.form.tagYoga,
+    'Dancing': t.form.tagDancing, 'Gaming': t.form.tagGaming, 'Writing': t.form.tagWriting,
+    'Movies': t.form.tagMovies, 'Sports': t.form.tagSports,
+  };
+  const LIFESTYLE_MAP: Record<string, string> = {
+    'Active': t.form.tagActive, 'Social': t.form.tagSocial, 'Introspective': t.form.tagIntrospective,
+    'Adventurous': t.form.tagAdventurous, 'Creative': t.form.tagCreative, 'Health-conscious': t.form.tagHealthConscious,
+    'Balanced': t.form.tagBalanced, 'Driven': t.form.tagDriven, 'Relaxed': t.form.tagRelaxed,
+    'Spontaneous': t.form.tagSpontaneous, 'Organized': t.form.tagOrganized,
+  };
+
   const [step, setStep] = useState(initialProfile ? FIRST_PROFILE_EDIT_STEP : 1);
   const [isGeneratingBio, setIsGeneratingBio] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -155,7 +176,7 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
         <p className="text-sm text-muted-foreground">{t.form.stepOf(step, totalSteps)}</p>
       </div>
 
-      <Card className="p-8">
+      <Card className="p-8 glass-card rounded-2xl">
         {/* Step 1: Consent */}
         {step === 1 && (
           <div className="space-y-6">
@@ -896,7 +917,7 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                           : addItem('values', value)
                       }
                     >
-                      {value}
+                      {COMMON_VALUES_MAP[value] || value}
                       {profile.values?.includes(value) && <X className="ml-1 h-3 w-3" />}
                     </Badge>
                   ))}
@@ -917,7 +938,7 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                           : addItem('interests', interest)
                       }
                     >
-                      {interest}
+                      {COMMON_INTERESTS_MAP[interest] || interest}
                       {profile.interests?.includes(interest) && <X className="ml-1 h-3 w-3" />}
                     </Badge>
                   ))}
@@ -938,7 +959,7 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                           : addItem('lifestyle', trait)
                       }
                     >
-                      {trait}
+                      {LIFESTYLE_MAP[trait] || trait}
                       {profile.lifestyle?.includes(trait) && <X className="ml-1 h-3 w-3" />}
                     </Badge>
                   ))}

@@ -90,7 +90,7 @@ function App() {
 
   if (!userProfile || isEditingProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10 p-4 md:p-8">
+      <div className="min-h-screen gradient-mesh p-4 md:p-8">
         <Toaster position="top-center" />
         <div className="max-w-4xl mx-auto py-8">
           <div className="flex items-center justify-between mb-4">
@@ -98,6 +98,7 @@ function App() {
               <Button
                 variant="outline"
                 onClick={() => setIsEditingProfile(false)}
+                className="glass"
               >
                 {t.app.cancel}
               </Button>
@@ -106,7 +107,7 @@ function App() {
               variant="ghost"
               size="sm"
               onClick={toggleLanguage}
-              className="ml-auto flex items-center gap-1"
+              className="ml-auto flex items-center gap-1 glass rounded-full px-4"
             >
               <Globe size={16} />
               {lang === 'en' ? 'RO' : 'EN'}
@@ -119,14 +120,14 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10">
+    <div className="min-h-screen gradient-mesh">
       <Toaster position="top-center" />
       
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="glass-header sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shadow-lg shadow-primary/25">
                 <Heart size={24} weight="duotone" />
               </div>
               <div>
@@ -142,12 +143,12 @@ function App() {
                 variant="ghost"
                 size="sm"
                 onClick={toggleLanguage}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 glass rounded-full px-4"
               >
                 <Globe size={16} />
                 {lang === 'en' ? 'RO' : 'EN'}
               </Button>
-              <Button variant="outline" size="sm" onClick={handleEditProfile}>
+              <Button variant="outline" size="sm" onClick={handleEditProfile} className="glass">
                 <PencilSimple className="mr-1" />
                 {t.app.editProfile}
               </Button>
@@ -176,20 +177,20 @@ function App() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
-            <TabsTrigger value="matches" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-3 max-w-md glass-tab rounded-xl p-1">
+            <TabsTrigger value="matches" className="flex items-center gap-2 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg">
               <Heart size={16} />
               {t.tabs.matches}
             </TabsTrigger>
             <TabsTrigger
               value="horoscope"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg"
               disabled={!userProfile.optInAstrology || !userProfile.birthDate}
             >
               <Moon size={16} />
               {t.tabs.horoscope}
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
+            <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg">
               <User size={16} />
               {t.tabs.profile}
             </TabsTrigger>
@@ -199,7 +200,7 @@ function App() {
             {isLoadingMatches ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
-                  <Card key={i} className="p-6">
+                  <Card key={i} className="p-6 glass-card rounded-2xl">
                     <div className="flex gap-6">
                       <Skeleton className="w-20 h-20 rounded-full" />
                       <div className="flex-1 space-y-2">
@@ -234,7 +235,7 @@ function App() {
                 ))}
               </motion.div>
             ) : (
-              <Card className="p-12 text-center">
+              <Card className="p-12 text-center glass-card rounded-2xl">
                 <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
                   <Sparkle size={32} className="text-muted-foreground" />
                 </div>
@@ -253,7 +254,7 @@ function App() {
             {userProfile.optInAstrology && userProfile.birthDate ? (
               <HoroscopeView birthDate={userProfile.birthDate} matches={qualifiedMatches.map(m => m.match)} />
             ) : (
-              <Card className="p-12 text-center">
+              <Card className="p-12 text-center glass-card rounded-2xl">
                 <Moon size={48} className="mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-xl font-bold mb-2">{t.horoscope.notEnabled}</h3>
                 <p className="text-muted-foreground mb-4">
@@ -265,7 +266,7 @@ function App() {
           </TabsContent>
 
           <TabsContent value="profile">
-            <Card className="p-6">
+            <Card className="p-6 glass-card rounded-2xl">
               <h3 className="text-xl font-bold mb-4">{t.profileDisplay.title}</h3>
               
               <div className="space-y-4">

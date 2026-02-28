@@ -253,9 +253,52 @@ export const ro: Translations = {
     salaryPlaceholder: 'ex: €40k-60k',
     selectPlaceholder: 'Selectează o opțiune',
 
+    // Tags - Values
+    tagHonesty: 'Onestitate',
+    tagGrowth: 'Dezvoltare',
+    tagFamily: 'Familie',
+    tagCreativity: 'Creativitate',
+    tagAdventure: 'Aventura',
+    tagEmpathy: 'Empatie',
+    tagAuthenticity: 'Autenticitate',
+    tagMindfulness: 'Mindfulness',
+    tagInnovation: 'Inovatie',
+    tagCompassion: 'Compasiune',
+    tagOptimism: 'Optimism',
+    tagStability: 'Stabilitate',
+
+    // Tags - Interests
+    tagTravel: 'Calatorii',
+    tagCooking: 'Gatit',
+    tagHiking: 'Drumetii',
+    tagReading: 'Citit',
+    tagPhotography: 'Fotografie',
+    tagMusic: 'Muzica',
+    tagArt: 'Arta',
+    tagFitness: 'Fitness',
+    tagYoga: 'Yoga',
+    tagDancing: 'Dans',
+    tagGaming: 'Gaming',
+    tagWriting: 'Scris',
+    tagMovies: 'Filme',
+    tagSports: 'Sport',
+
+    // Tags - Lifestyle
+    tagActive: 'Activ',
+    tagSocial: 'Social',
+    tagIntrospective: 'Introspectiv',
+    tagAdventurous: 'Aventuros',
+    tagCreative: 'Creativ',
+    tagHealthConscious: 'Constient de sanatate',
+    tagBalanced: 'Echilibrat',
+    tagDriven: 'Ambitios',
+    tagRelaxed: 'Relaxat',
+    tagSpontaneous: 'Spontan',
+    tagOrganized: 'Organizat',
+
     // Languages section
     languagesLabel: 'Limbi Vorbite',
-    languagePlaceholder: 'Adaugă o limbă',
+    languagePlaceholder: 'Adauga o limba',
 
     // AI Consistency
     analyzingProfile: 'AI-ul analizează profilul tău pentru consistență...',
