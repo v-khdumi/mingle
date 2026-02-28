@@ -233,7 +233,7 @@ Return ONLY valid JSON in this exact format:
 export async function generateMatchProfiles(
   userProfile: UserProfile
 ): Promise<MatchProfile[]> {
-  const prompt = `You are an AI matchmaking engine for a dating platform. Based on the following user profile, generate 6–8 diverse, realistic potential match profiles. Each profile should be a plausible real person (with varied backgrounds, interests, and personalities) that could be a good or interesting match for this user.
+  const prompt = `You are an AI matchmaking engine for a dating platform. Based on the following user profile, generate 6-8 diverse, realistic potential match profiles. Each profile should be a plausible real person (with varied backgrounds, interests, and personalities) that could be a good or interesting match for this user.
 
 User Profile:
 ${JSON.stringify({
@@ -255,13 +255,12 @@ ${JSON.stringify({
 Requirements:
 - Generate between 6 and 8 profiles
 - Each profile must have a unique "id" (use "ai-1", "ai-2", etc.)
-- Include a realistic name, a natural 1-2 sentence bio, and a plausible birthDate (YYYY-MM-DD format, ages 22-45)
+- Include a realistic name, a natural 1-2 sentence bio, and a plausible birthDate (YYYY-MM-DD format, ages 22-45) for every profile
 - Include values (3-4), interests (4-5), lifestyle (2-3), languages (1-3), workSchedule, industry, and education
 - Some profiles should share interests/values with the user (good matches), others should be complementary or different (variety)
 - Set ageConfirmed, photoUploaded, livenessVerified, consentGiven to true
 - Set optInAstrology, optInAttractiveness, optInSalary to reasonable varied booleans
 - If optInSalary is true, include a salaryRange (e.g., "€30k-50k")
-- If optInAstrology is true, include a birthDate
 - Optionally include height and dietaryPreferences for some profiles
 
 Return ONLY valid JSON in this exact format (no other text):
