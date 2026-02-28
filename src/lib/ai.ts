@@ -201,12 +201,8 @@ Return ONLY valid JSON in this exact format:
   "passed": boolean (true if score >= 70)
 }`;
 
-  try {
-    const response = await callLLM(prompt, 'gpt-4o-mini', true);
-    return JSON.parse(response);
-  } catch {
-    return { score: 85, flags: [], passed: true };
-  }
+  const response = await callLLM(prompt, 'gpt-4o-mini', true);
+  return JSON.parse(response);
 }
 
 export async function generateBio(
