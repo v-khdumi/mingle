@@ -14,7 +14,18 @@ Right now, this is just a starting point — the perfect place to begin building
 
 ## ☁️ Deploy to Azure
 
-Click the button below to deploy the Mingle app to Azure Static Web Apps:
+Deploy the Mingle app to Azure Static Web Apps using one of the options below.
+
+### Option A — Use the custom template editor (works for private repos)
+
+1. Open the [Azure Portal Custom Deployment](https://portal.azure.com/#create/Microsoft.Template) page.
+2. Click **Build your own template in the editor**.
+3. Copy the contents of [`azuredeploy.json`](azuredeploy.json) and paste them into the editor.
+4. Click **Save**, fill in the parameters, then click **Review + create**.
+
+### Option B — One-click deploy (public repos only)
+
+> **Note:** This button requires the repository to be **public** so that Azure can download the template. If the repo is private you will see a CORS / download error — use Option A or the CLI instead.
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fv-khdumi%2Fmingle%2Fmain%2Fazuredeploy.json)
 
@@ -31,7 +42,7 @@ Click the button below to deploy the Mingle app to Azure Static Web Apps:
 
 ### Setup steps
 
-1. **Deploy the infrastructure** — click the button above or run the Azure CLI command below.
+1. **Deploy the infrastructure** — use Option A (custom template editor), Option B (one-click button, public repos only), or the Azure CLI command below.
 2. **Copy the deployment token** — from the Azure Portal, open the Static Web App resource → **Manage deployment token**.
 3. **Add the token as a GitHub secret** — go to your repo → **Settings → Secrets and variables → Actions** → create `AZURE_STATIC_WEB_APPS_API_TOKEN` with the deployment token value.
 4. **Push to `main`** — the GitHub Actions workflow (`.github/workflows/azure-deploy.yml`) will build and deploy automatically.
