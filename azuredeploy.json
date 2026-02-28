@@ -41,7 +41,7 @@
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "URL of the GitHub repository (e.g. https://github.com/user/mingle). Required for GitHub integration."
+        "description": "URL of the GitHub repository (e.g. https://github.com/user/mingle). Provide together with repositoryToken for automatic CI/CD."
       }
     },
     "repositoryBranch": {
@@ -55,7 +55,7 @@
       "type": "securestring",
       "defaultValue": "",
       "metadata": {
-        "description": "GitHub personal access token (classic) with repo and workflow scopes. Required for automatic CI/CD setup."
+        "description": "GitHub personal access token (classic) with repo and workflow scopes. Provide together with repositoryUrl for automatic CI/CD."
       }
     },
     "appLocation": {

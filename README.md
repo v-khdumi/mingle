@@ -46,7 +46,7 @@ The template also:
 ### Prerequisites
 
 - An [Azure subscription](https://azure.microsoft.com/free/)
-- A GitHub account with a [personal access token (classic)](https://github.com/settings/tokens) that has **repo** and **workflow** scopes
+- A GitHub account with a [personal access token (classic)](https://github.com/settings/tokens) that has **repo** and **workflow** scopes (needed for automatic CI/CD integration)
 - Access to Azure OpenAI Service (you may need to [request access](https://aka.ms/oai/access))
 
 ### Setup steps
