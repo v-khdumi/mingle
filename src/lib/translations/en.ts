@@ -6,7 +6,6 @@ export const en = {
     editProfile: 'Edit Profile',
     cancel: 'Cancel',
     welcomeBack: 'Welcome back, {name}!',
-    matchesFound: '{count} compatible {count, plural, one {match} other {matches}} found',
     matchesFoundSimple: (count: number) => `${count} compatible ${count === 1 ? 'match' : 'matches'} found`,
     deleteConfirm: 'Are you sure you want to delete your profile? This cannot be undone.',
     profileDeleted: 'Profile deleted',

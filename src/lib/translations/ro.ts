@@ -8,7 +8,6 @@ export const ro: Translations = {
     editProfile: 'Editează Profil',
     cancel: 'Anulează',
     welcomeBack: 'Bine ai revenit, {name}!',
-    matchesFound: '{count} {count, plural, one {potrivire compatibilă} other {potriviri compatibile}} găsite',
     matchesFoundSimple: (count: number) => `${count} ${count === 1 ? 'potrivire compatibilă' : 'potriviri compatibile'} găsite`,
     deleteConfirm: 'Ești sigur/ă că vrei să ștergi profilul? Această acțiune nu poate fi anulată.',
     profileDeleted: 'Profil șters',

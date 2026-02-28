@@ -31,10 +31,10 @@ function detectLanguage(): Language {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Language>(detectLanguage);
+  const [lang, setLanguageState] = useState<Language>(detectLanguage);
 
   const setLang = useCallback((newLang: Language) => {
-    setLangState(newLang);
+    setLanguageState(newLang);
     try {
       localStorage.setItem('mingle-lang', newLang);
     } catch {

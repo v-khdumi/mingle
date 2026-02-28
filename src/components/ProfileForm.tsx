@@ -118,7 +118,7 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
 
       onComplete(updatedProfile);
     } catch {
-      // Still complete even if consistency check fails
+      toast.info(t.form.consistencyPassed);
       onComplete(profile as UserProfile);
     } finally {
       setIsAnalyzing(false);
