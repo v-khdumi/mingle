@@ -1,0 +1,105 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys all Azure resources needed for the Mingle dating app (React SPA)."
+  },
+  "parameters": {
+    "staticWebAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure Static Web App."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "westeurope",
+      "allowedValues": [
+        "westus2",
+        "centralus",
+        "eastus2",
+        "westeurope",
+        "eastasia",
+        "eastasiastage"
+      ],
+      "metadata": {
+        "description": "Location for the Static Web App."
+      }
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "Free",
+      "allowedValues": [
+        "Free",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "Pricing tier for the Static Web App."
+      }
+    },
+    "repositoryUrl": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "URL of the GitHub repository (e.g. https://github.com/user/mingle). Leave empty if deploying manually."
+      }
+    },
+    "repositoryBranch": {
+      "type": "string",
+      "defaultValue": "main",
+      "metadata": {
+        "description": "Branch to deploy from."
+      }
+    },
+    "appLocation": {
+      "type": "string",
+      "defaultValue": "/",
+      "metadata": {
+        "description": "Location of the app source code relative to the repo root."
+      }
+    },
+    "outputLocation": {
+      "type": "string",
+      "defaultValue": "dist",
+      "metadata": {
+        "description": "Build output directory (Vite outputs to dist)."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('staticWebAppName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('sku')]",
+        "tier": "[parameters('sku')]"
+      },
+      "properties": {
+        "repositoryUrl": "[if(empty(parameters('repositoryUrl')), json('null'), parameters('repositoryUrl'))]",
+        "branch": "[parameters('repositoryBranch')]",
+        "buildProperties": {
+          "appLocation": "[parameters('appLocation')]",
+          "outputLocation": "[parameters('outputLocation')]",
+          "appBuildCommand": "npm run build",
+          "skipGithubActionWorkflowGeneration": true
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName'))).defaultHostname]"
+    },
+    "staticWebAppId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName'))]"
+    },
+    "deploymentToken": {
+      "type": "string",
+      "value": "[listSecrets(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName')), '2022-09-01').properties.apiKey]"
+    }
+  }
+}
