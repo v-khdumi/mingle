@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "Deploys all Azure resources needed for the Mingle dating app (React SPA)."
+    "description": "Deploys all Azure resources needed for the Mingle dating app: Static Web App, Azure OpenAI (GPT-4o / GPT-4o-mini), and Cosmos DB."
   },
   "parameters": {
     "staticWebAppName": {
@@ -23,7 +23,7 @@
         "eastasiastage"
       ],
       "metadata": {
-        "description": "Location for the Static Web App."
+        "description": "Location for the Static Web App and Cosmos DB."
       }
     },
     "sku": {
@@ -64,6 +64,46 @@
       "metadata": {
         "description": "Build output directory (Vite outputs to dist)."
       }
+    },
+    "openAiAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure OpenAI account."
+      }
+    },
+    "openAiLocation": {
+      "type": "string",
+      "defaultValue": "swedencentral",
+      "allowedValues": [
+        "eastus",
+        "eastus2",
+        "westus",
+        "westus3",
+        "southcentralus",
+        "westeurope",
+        "swedencentral",
+        "uksouth",
+        "francecentral"
+      ],
+      "metadata": {
+        "description": "Location for the Azure OpenAI resource (must support GPT-4o models)."
+      }
+    },
+    "openAiSku": {
+      "type": "string",
+      "defaultValue": "S0",
+      "allowedValues": [
+        "S0"
+      ],
+      "metadata": {
+        "description": "Pricing tier for the Azure OpenAI account."
+      }
+    },
+    "cosmosDbAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure Cosmos DB account."
+      }
     }
   },
   "resources": [
@@ -86,6 +126,133 @@
           "skipGithubActionWorkflowGeneration": true
         }
       }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2024-10-01",
+      "name": "[parameters('openAiAccountName')]",
+      "location": "[parameters('openAiLocation')]",
+      "kind": "OpenAI",
+      "sku": {
+        "name": "[parameters('openAiSku')]"
+      },
+      "properties": {
+        "customSubDomainName": "[parameters('openAiAccountName')]",
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[concat(parameters('openAiAccountName'), '/gpt-4o')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiAccountName'))]"
+      ],
+      "sku": {
+        "name": "Standard",
+        "capacity": 10
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "gpt-4o",
+          "version": "2024-08-06"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[concat(parameters('openAiAccountName'), '/gpt-4o-mini')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiAccountName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', parameters('openAiAccountName'), 'gpt-4o')]"
+      ],
+      "sku": {
+        "name": "Standard",
+        "capacity": 10
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "gpt-4o-mini",
+          "version": "2024-07-18"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2024-05-15",
+      "name": "[parameters('cosmosDbAccountName')]",
+      "location": "[parameters('location')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0
+          }
+        ],
+        "capabilities": [
+          {
+            "name": "EnableServerless"
+          }
+        ],
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2024-05-15",
+      "name": "[concat(parameters('cosmosDbAccountName'), '/mingle')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDbAccountName'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "mingle"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2024-05-15",
+      "name": "[concat(parameters('cosmosDbAccountName'), '/mingle/profiles')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('cosmosDbAccountName'), 'mingle')]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "profiles",
+          "partitionKey": {
+            "paths": [
+              "/userId"
+            ],
+            "kind": "Hash"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/staticSites/config",
+      "apiVersion": "2022-09-01",
+      "name": "[concat(parameters('staticWebAppName'), '/appsettings')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiAccountName'))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDbAccountName'))]"
+      ],
+      "properties": {
+        "AZURE_OPENAI_ENDPOINT": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiAccountName'))).endpoint]",
+        "AZURE_OPENAI_KEY": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiAccountName')), '2024-10-01').key1]",
+        "COSMOS_DB_ENDPOINT": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDbAccountName'))).documentEndpoint]",
+        "COSMOS_DB_KEY": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDbAccountName')), '2024-05-15').primaryMasterKey]",
+        "COSMOS_DB_DATABASE": "mingle",
+        "COSMOS_DB_CONTAINER": "profiles"
+      }
     }
   ],
   "outputs": {
@@ -100,6 +267,14 @@
     "deploymentToken": {
       "type": "string",
       "value": "[listSecrets(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName')), '2022-09-01').properties.apiKey]"
+    },
+    "openAiEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiAccountName'))).endpoint]"
+    },
+    "cosmosDbEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDbAccountName'))).documentEndpoint]"
     }
   }
 }
