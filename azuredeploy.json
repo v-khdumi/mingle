@@ -67,8 +67,10 @@
     },
     "openAiAccountName": {
       "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
       "metadata": {
-        "description": "Name of the Azure OpenAI account."
+        "description": "Globally unique name of the Azure OpenAI account (lowercase letters, numbers, and hyphens only)."
       }
     },
     "openAiLocation": {
@@ -101,8 +103,10 @@
     },
     "cosmosDbAccountName": {
       "type": "string",
+      "minLength": 3,
+      "maxLength": 44,
       "metadata": {
-        "description": "Name of the Azure Cosmos DB account."
+        "description": "Globally unique name of the Azure Cosmos DB account (lowercase letters, numbers, and hyphens only)."
       }
     }
   },
