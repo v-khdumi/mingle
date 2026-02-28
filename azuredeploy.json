@@ -77,7 +77,7 @@
         "tier": "[parameters('sku')]"
       },
       "properties": {
-        "repositoryUrl": "[if(empty(parameters('repositoryUrl')), null(), parameters('repositoryUrl'))]",
+        "repositoryUrl": "[if(empty(parameters('repositoryUrl')), json('null'), parameters('repositoryUrl'))]",
         "branch": "[parameters('repositoryBranch')]",
         "buildProperties": {
           "appLocation": "[parameters('appLocation')]",
