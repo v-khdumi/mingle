@@ -1,5 +1,5 @@
 import { UserProfile, MatchProfile, CompatibilityResult, HoroscopeReading, SynastryReading } from './types';
-import { getZodiacSign } from './sampleData';
+import { getZodiacSign } from './utils';
 
 async function callLLM(prompt: string, model: string, jsonMode: boolean): Promise<string> {
   if (typeof window !== 'undefined' && window.spark?.llm && window.spark?.llmPrompt) {
@@ -228,4 +228,72 @@ Return ONLY valid JSON in this exact format:
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
   const parsed = JSON.parse(response);
   return parsed.bio;
+}
+
+export async function generateMatchProfiles(
+  userProfile: UserProfile
+): Promise<MatchProfile[]> {
+  const prompt = `You are an AI matchmaking engine for a dating platform. Based on the following user profile, generate 6–8 diverse, realistic potential match profiles. Each profile should be a plausible real person (with varied backgrounds, interests, and personalities) that could be a good or interesting match for this user.
+
+User Profile:
+${JSON.stringify({
+    name: userProfile.name,
+    values: userProfile.values,
+    interests: userProfile.interests,
+    lifestyle: userProfile.lifestyle,
+    industry: userProfile.industry,
+    education: userProfile.education,
+    languages: userProfile.languages,
+    workSchedule: userProfile.workSchedule,
+    lookingFor: userProfile.lookingFor,
+    loveLanguage: userProfile.loveLanguage,
+    optInAstrology: userProfile.optInAstrology,
+    optInSalary: userProfile.optInSalary,
+    optInAttractiveness: userProfile.optInAttractiveness,
+  }, null, 2)}
+
+Requirements:
+- Generate between 6 and 8 profiles
+- Each profile must have a unique "id" (use "ai-1", "ai-2", etc.)
+- Include a realistic name, a natural 1-2 sentence bio, and a plausible birthDate (YYYY-MM-DD format, ages 22-45)
+- Include values (3-4), interests (4-5), lifestyle (2-3), languages (1-3), workSchedule, industry, and education
+- Some profiles should share interests/values with the user (good matches), others should be complementary or different (variety)
+- Set ageConfirmed, photoUploaded, livenessVerified, consentGiven to true
+- Set optInAstrology, optInAttractiveness, optInSalary to reasonable varied booleans
+- If optInSalary is true, include a salaryRange (e.g., "€30k-50k")
+- If optInAstrology is true, include a birthDate
+- Optionally include height and dietaryPreferences for some profiles
+
+Return ONLY valid JSON in this exact format (no other text):
+{
+  "profiles": [
+    {
+      "id": "string",
+      "name": "string",
+      "bio": "string",
+      "birthDate": "string (YYYY-MM-DD)",
+      "values": ["string"],
+      "interests": ["string"],
+      "lifestyle": ["string"],
+      "workSchedule": "string",
+      "industry": "string",
+      "education": "string",
+      "languages": ["string"],
+      "dietaryPreferences": "string or omit",
+      "height": "string or omit",
+      "salaryRange": "string or omit",
+      "optInAstrology": boolean,
+      "optInAttractiveness": boolean,
+      "optInSalary": boolean,
+      "ageConfirmed": true,
+      "photoUploaded": true,
+      "livenessVerified": true,
+      "consentGiven": true
+    }
+  ]
+}`;
+
+  const response = await callLLM(prompt, 'gpt-4o', true);
+  const parsed = JSON.parse(response);
+  return parsed.profiles;
 }

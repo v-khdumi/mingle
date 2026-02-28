@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Heart, Sparkle, ChatCircle, User, ShieldCheck } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { getZodiacSign } from '@/lib/sampleData';
+import { getZodiacSign } from '@/lib/utils';
 import { generateIcebreaker } from '@/lib/ai';
 import { UserProfile } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';

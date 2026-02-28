@@ -4,8 +4,7 @@ import { UserProfile, MatchProfile, CompatibilityResult } from './lib/types';
 import { ProfileForm } from './components/ProfileForm';
 import { MatchCard } from './components/MatchCard';
 import { HoroscopeView } from './components/HoroscopeView';
-import { sampleMatches } from './lib/sampleData';
-import { calculateCompatibility } from './lib/ai';
+import { calculateCompatibility, generateMatchProfiles } from './lib/ai';
 import { useI18n, type Language } from './lib/i18n';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Button } from './components/ui/button';
@@ -19,6 +18,7 @@ import { motion } from 'framer-motion';
 function App() {
   const { t, lang, setLang } = useI18n();
   const [userProfile, setUserProfile, deleteUserProfile] = useKV<UserProfile | null>('user-profile', null);
+  const [generatedMatches, setGeneratedMatches] = useState<MatchProfile[]>([]);
   const [compatibilityResults, setCompatibilityResults] = useState<CompatibilityResult[]>([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
   const [activeTab, setActiveTab] = useState('matches');
@@ -35,7 +35,10 @@ function App() {
 
     setIsLoadingMatches(true);
     try {
-      const results = await calculateCompatibility(userProfile, sampleMatches);
+      const aiMatches = await generateMatchProfiles(userProfile);
+      setGeneratedMatches(aiMatches);
+
+      const results = await calculateCompatibility(userProfile, aiMatches);
       const filteredResults = results.filter((r) => r.score >= 0.70);
       const sortedResults = filteredResults.sort((a, b) => b.score - a.score);
       setCompatibilityResults(sortedResults);
@@ -67,6 +70,7 @@ function App() {
   const handleDeleteProfile = () => {
     if (confirm(t.app.deleteConfirm)) {
       deleteUserProfile();
+      setGeneratedMatches([]);
       setCompatibilityResults([]);
       setIsEditingProfile(false);
       toast.success(t.app.profileDeleted);
@@ -79,7 +83,7 @@ function App() {
 
   const qualifiedMatches = compatibilityResults
     .map((result) => {
-      const match = sampleMatches.find((m) => m.id === result.matchId);
+      const match = generatedMatches.find((m) => m.id === result.matchId);
       return match ? { match, compatibility: result } : null;
     })
     .filter((item): item is { match: MatchProfile; compatibility: CompatibilityResult } => item !== null);
