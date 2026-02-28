@@ -6,16 +6,18 @@ import { MatchCard } from './components/MatchCard';
 import { HoroscopeView } from './components/HoroscopeView';
 import { sampleMatches } from './lib/sampleData';
 import { calculateCompatibility } from './lib/ai';
+import { useI18n, type Language } from './lib/i18n';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Skeleton } from './components/ui/skeleton';
-import { Heart, Moon, User, PencilSimple, Sparkle, ShieldCheck, Camera, Envelope } from '@phosphor-icons/react';
+import { Heart, Moon, User, PencilSimple, Sparkle, ShieldCheck, Camera, Envelope, Globe } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { motion } from 'framer-motion';
 
 function App() {
+  const { t, lang, setLang } = useI18n();
   const [userProfile, setUserProfile, deleteUserProfile] = useKV<UserProfile | null>('user-profile', null);
   const [compatibilityResults, setCompatibilityResults] = useState<CompatibilityResult[]>([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
@@ -39,12 +41,12 @@ function App() {
       setCompatibilityResults(sortedResults);
       
       if (filteredResults.length === 0) {
-        toast.info('No matches above 70% compatibility threshold. Try updating your profile!');
+        toast.info(t.app.noMatchesThreshold);
       } else {
-        toast.success(`Found ${filteredResults.length} compatible ${filteredResults.length === 1 ? 'match' : 'matches'}!`);
+        toast.success(t.app.foundMatches(filteredResults.length));
       }
     } catch (error) {
-      toast.error('Failed to load matches. Please try again.');
+      toast.error(t.app.failedLoadMatches);
       console.error(error);
     } finally {
       setIsLoadingMatches(false);
@@ -63,12 +65,16 @@ function App() {
   };
 
   const handleDeleteProfile = () => {
-    if (confirm('Are you sure you want to delete your profile? This cannot be undone.')) {
+    if (confirm(t.app.deleteConfirm)) {
       deleteUserProfile();
       setCompatibilityResults([]);
       setIsEditingProfile(false);
-      toast.success('Profile deleted');
+      toast.success(t.app.profileDeleted);
     }
+  };
+
+  const toggleLanguage = () => {
+    setLang(lang === 'en' ? 'ro' : 'en');
   };
 
   const qualifiedMatches = compatibilityResults
@@ -83,15 +89,25 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10 p-4 md:p-8">
         <Toaster position="top-center" />
         <div className="max-w-4xl mx-auto py-8">
-          {userProfile && isEditingProfile && (
+          <div className="flex items-center justify-between mb-4">
+            {userProfile && isEditingProfile && (
+              <Button
+                variant="outline"
+                onClick={() => setIsEditingProfile(false)}
+              >
+                {t.app.cancel}
+              </Button>
+            )}
             <Button
-              variant="outline"
-              onClick={() => setIsEditingProfile(false)}
-              className="mb-4"
+              variant="ghost"
+              size="sm"
+              onClick={toggleLanguage}
+              className="ml-auto flex items-center gap-1"
             >
-              Cancel
+              <Globe size={16} />
+              {lang === 'en' ? 'RO' : 'EN'}
             </Button>
-          )}
+          </div>
           <ProfileForm initialProfile={userProfile || undefined} onComplete={handleProfileComplete} />
         </div>
       </div>
@@ -111,16 +127,25 @@ function App() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Mingle
+                  {t.app.title}
                 </h1>
-                <p className="text-xs text-muted-foreground">AI-Powered Compatibility</p>
+                <p className="text-xs text-muted-foreground">{t.app.subtitle}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleLanguage}
+                className="flex items-center gap-1"
+              >
+                <Globe size={16} />
+                {lang === 'en' ? 'RO' : 'EN'}
+              </Button>
               <Button variant="outline" size="sm" onClick={handleEditProfile}>
                 <PencilSimple className="mr-1" />
-                Edit Profile
+                {t.app.editProfile}
               </Button>
             </div>
           </div>
@@ -138,9 +163,9 @@ function App() {
               <User size={28} weight="duotone" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">Welcome back, {userProfile.name}!</h2>
+              <h2 className="text-2xl font-bold">{t.app.welcomeBack.replace('{name}', userProfile.name)}</h2>
               <p className="text-muted-foreground text-sm">
-                {qualifiedMatches.length} compatible {qualifiedMatches.length === 1 ? 'match' : 'matches'} found
+                {t.app.matchesFoundSimple(qualifiedMatches.length)}
               </p>
             </div>
           </motion.div>
@@ -150,7 +175,7 @@ function App() {
           <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="matches" className="flex items-center gap-2">
               <Heart size={16} />
-              Matches
+              {t.tabs.matches}
             </TabsTrigger>
             <TabsTrigger
               value="horoscope"
@@ -158,11 +183,11 @@ function App() {
               disabled={!userProfile.optInAstrology || !userProfile.birthDate}
             >
               <Moon size={16} />
-              Horoscope
+              {t.tabs.horoscope}
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User size={16} />
-              Profile
+              {t.tabs.profile}
             </TabsTrigger>
           </TabsList>
 
@@ -209,12 +234,12 @@ function App() {
                 <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
                   <Sparkle size={32} className="text-muted-foreground" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">No matches yet</h3>
+                <h3 className="text-xl font-bold mb-2">{t.matchCard.noMatches}</h3>
                 <p className="text-muted-foreground mb-4">
-                  No profiles exceeded the 70% compatibility threshold.
+                  {t.matchCard.noMatchesDesc}
                 </p>
                 <Button onClick={handleEditProfile} variant="outline">
-                  Update Your Profile
+                  {t.matchCard.updateProfile}
                 </Button>
               </Card>
             )}
@@ -226,57 +251,96 @@ function App() {
             ) : (
               <Card className="p-12 text-center">
                 <Moon size={48} className="mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-bold mb-2">Astrology Not Enabled</h3>
+                <h3 className="text-xl font-bold mb-2">{t.horoscope.notEnabled}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Enable astrology in your profile to access horoscopes and synastry readings.
+                  {t.horoscope.notEnabledDesc}
                 </p>
-                <Button onClick={handleEditProfile}>Update Profile</Button>
+                <Button onClick={handleEditProfile}>{t.horoscope.updateProfile}</Button>
               </Card>
             )}
           </TabsContent>
 
           <TabsContent value="profile">
             <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">Your Profile</h3>
+              <h3 className="text-xl font-bold mb-4">{t.profileDisplay.title}</h3>
               
               <div className="space-y-4">
                 {(userProfile.livenessVerified || userProfile.photoUploaded || userProfile.consentGiven) && (
                   <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-2">Trust Badges</h4>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-2">{t.profileDisplay.trustBadges}</h4>
                     <div className="flex flex-wrap gap-2">
                       {userProfile.photoUploaded && (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                          <Camera size={12} /> Photo Verified
+                          <Camera size={12} /> {t.profileDisplay.photoVerified}
                         </span>
                       )}
                       {userProfile.livenessVerified && (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                          <ShieldCheck size={12} /> Liveness Verified
+                          <ShieldCheck size={12} /> {t.profileDisplay.livenessVerified}
                         </span>
                       )}
                       {userProfile.consentGiven && (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
-                          <Envelope size={12} /> Consent Given
+                          <Envelope size={12} /> {t.profileDisplay.consentGiven}
                         </span>
                       )}
                     </div>
                   </div>
                 )}
 
+                {userProfile.authenticityScore !== undefined && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-2">{t.profileDisplay.authenticityScore}</h4>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 bg-muted rounded-full h-3">
+                        <div 
+                          className={`h-3 rounded-full ${
+                            userProfile.authenticityScore >= 80 ? 'bg-green-500' :
+                            userProfile.authenticityScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${userProfile.authenticityScore}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-bold">{userProfile.authenticityScore}%</span>
+                    </div>
+                    {userProfile.consistencyFlags && userProfile.consistencyFlags.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {userProfile.consistencyFlags.map((flag, i) => (
+                          <p key={i} className="text-xs text-amber-600">⚠️ {flag}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">Name</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.name}</h4>
                   <p>{userProfile.name}</p>
                 </div>
 
                 {userProfile.bio && (
                   <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Bio</h4>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.bio}</h4>
                     <p className="text-sm">{userProfile.bio}</p>
                   </div>
                 )}
 
+                {userProfile.lookingFor && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.relationshipGoal}</h4>
+                    <p className="text-sm capitalize">{userProfile.lookingFor}</p>
+                  </div>
+                )}
+
+                {userProfile.loveLanguage && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.form.loveLanguage}</h4>
+                    <p className="text-sm capitalize">{userProfile.loveLanguage}</p>
+                  </div>
+                )}
+
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">Values</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.values}</h4>
                   <div className="flex flex-wrap gap-2">
                     {userProfile.values.map((value) => (
                       <span key={value} className="px-2 py-1 bg-primary/10 text-primary rounded text-sm">
@@ -287,7 +351,7 @@ function App() {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">Interests</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.interests}</h4>
                   <div className="flex flex-wrap gap-2">
                     {userProfile.interests.map((interest) => (
                       <span key={interest} className="px-2 py-1 bg-secondary/40 text-secondary-foreground rounded text-sm">
@@ -298,7 +362,7 @@ function App() {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">Lifestyle</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.lifestyle}</h4>
                   <div className="flex flex-wrap gap-2">
                     {userProfile.lifestyle.map((trait) => (
                       <span key={trait} className="px-2 py-1 bg-accent/20 text-accent-foreground rounded text-sm">
@@ -310,28 +374,28 @@ function App() {
 
                 {userProfile.languages.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Languages</h4>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.languages}</h4>
                     <p className="text-sm">{userProfile.languages.join(', ')}</p>
                   </div>
                 )}
 
                 {userProfile.industry && (
                   <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Industry</h4>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.industry}</h4>
                     <p className="text-sm">{userProfile.industry}</p>
                   </div>
                 )}
 
                 {userProfile.workSchedule && (
                   <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Work Schedule</h4>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.workSchedule}</h4>
                     <p className="text-sm">{userProfile.workSchedule}</p>
                   </div>
                 )}
 
                 {userProfile.education && (
                   <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Education</h4>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">{t.profileDisplay.education}</h4>
                     <p className="text-sm">{userProfile.education}</p>
                   </div>
                 )}
@@ -339,10 +403,10 @@ function App() {
                 <div className="pt-4 border-t flex gap-3">
                   <Button onClick={handleEditProfile} className="flex-1">
                     <PencilSimple className="mr-2" />
-                    Edit Profile
+                    {t.app.editProfile}
                   </Button>
                   <Button variant="destructive" onClick={handleDeleteProfile}>
-                    Delete Profile
+                    {t.profileDisplay.deleteProfile}
                   </Button>
                 </div>
               </div>

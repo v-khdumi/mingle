@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { getZodiacSign } from '@/lib/sampleData';
 import { generateIcebreaker } from '@/lib/ai';
 import { UserProfile } from '@/lib/types';
+import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 
 interface MatchCardProps {
@@ -20,6 +21,7 @@ interface MatchCardProps {
 const CHAT_UNLOCK_THRESHOLD = 0.70;
 
 export function MatchCard({ match, compatibility, userProfile }: MatchCardProps) {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [icebreaker, setIcebreaker] = useState<string | null>(null);
   const [isLoadingIcebreaker, setIsLoadingIcebreaker] = useState(false);
@@ -32,9 +34,9 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
     try {
       const message = await generateIcebreaker(userProfile, match);
       setIcebreaker(message);
-      toast.success('Icebreaker generated!');
+      toast.success(t.matchCard.icebreakerGenerated);
     } catch (error) {
-      toast.error('Failed to generate icebreaker');
+      toast.error(t.matchCard.icebreakerFailed);
     } finally {
       setIsLoadingIcebreaker(false);
     }
@@ -103,7 +105,7 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
                       <span className="text-lg font-bold">{scorePercent}%</span>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Match</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t.matchCard.match}</p>
                 </div>
               </div>
 
@@ -183,23 +185,39 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
                 </div>
               </div>
               <div className="flex-1">
-                <h4 className="font-bold text-lg mb-1">Compatibility Score</h4>
+                <h4 className="font-bold text-lg mb-1">{t.matchCard.compatibilityScore}</h4>
                 <p className="text-sm text-muted-foreground">{compatibility.explanation}</p>
               </div>
             </div>
+
+            {match.authenticityScore !== undefined && (
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm font-medium">{t.matchCard.authenticityScore}:</span>
+                <div className="flex-1 bg-muted rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full ${
+                      match.authenticityScore >= 80 ? 'bg-green-500' :
+                      match.authenticityScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${match.authenticityScore}%` }}
+                  />
+                </div>
+                <span className="text-sm font-bold">{match.authenticityScore}%</span>
+              </div>
+            )}
 
             {match.bio && (
               <div>
                 <h4 className="font-bold mb-2 flex items-center gap-2">
                   <Sparkle className="text-accent" />
-                  About
+                  {t.matchCard.about}
                 </h4>
                 <p className="text-sm">{match.bio}</p>
               </div>
             )}
 
             <div>
-              <h4 className="font-bold mb-2">Why This Match</h4>
+              <h4 className="font-bold mb-2">{t.matchCard.whyThisMatch}</h4>
               <div className="flex flex-wrap gap-2">
                 {compatibility.keyFactors.map((factor, idx) => (
                   <Badge key={idx} variant="secondary">
@@ -211,7 +229,7 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
 
             {match.values && match.values.length > 0 && (
               <div>
-                <h4 className="font-bold mb-2">Values</h4>
+                <h4 className="font-bold mb-2">{t.matchCard.values}</h4>
                 <div className="flex flex-wrap gap-2">
                   {match.values.map((value) => (
                     <Badge key={value} variant="outline">
@@ -224,7 +242,7 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
 
             {match.interests && match.interests.length > 0 && (
               <div>
-                <h4 className="font-bold mb-2">Interests</h4>
+                <h4 className="font-bold mb-2">{t.matchCard.interests}</h4>
                 <div className="flex flex-wrap gap-2">
                   {match.interests.map((interest) => (
                     <Badge key={interest} variant="outline">
@@ -237,21 +255,21 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
 
             {match.languages && match.languages.length > 0 && (
               <div>
-                <h4 className="font-bold mb-2">Languages</h4>
+                <h4 className="font-bold mb-2">{t.matchCard.languages}</h4>
                 <p className="text-sm">{match.languages.join(', ')}</p>
               </div>
             )}
 
             {match.workSchedule && (
               <div>
-                <h4 className="font-bold mb-2">Work Schedule</h4>
+                <h4 className="font-bold mb-2">{t.matchCard.workSchedule}</h4>
                 <p className="text-sm">{match.workSchedule}</p>
               </div>
             )}
 
             {match.education && (
               <div>
-                <h4 className="font-bold mb-2">Education</h4>
+                <h4 className="font-bold mb-2">{t.matchCard.education}</h4>
                 <p className="text-sm">{match.education}</p>
               </div>
             )}
@@ -259,11 +277,11 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
             <div className="border-t pt-4 space-y-3">
               {compatibility.score >= CHAT_UNLOCK_THRESHOLD ? (
                 <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800 mb-2">
-                  💬 Chat unlocked! Your compatibility score exceeds the 70% threshold.
+                  {t.matchCard.chatUnlocked}
                 </div>
               ) : (
                 <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground mb-2">
-                  🔒 Chat is locked. A compatibility score above 70% is required to start a conversation.
+                  {t.matchCard.chatLocked}
                 </div>
               )}
               <Button
@@ -272,12 +290,12 @@ export function MatchCard({ match, compatibility, userProfile }: MatchCardProps)
                 disabled={isLoadingIcebreaker}
               >
                 <ChatCircle className="mr-2" weight="bold" />
-                {isLoadingIcebreaker ? 'Generating...' : 'Generate Icebreaker'}
+                {isLoadingIcebreaker ? t.matchCard.generating : t.matchCard.generateIcebreaker}
               </Button>
 
               {icebreaker && (
                 <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium mb-2">Suggested opening:</p>
+                  <p className="text-sm font-medium mb-2">{t.matchCard.suggestedOpening}</p>
                   <p className="text-sm italic">"{icebreaker}"</p>
                 </div>
               )}

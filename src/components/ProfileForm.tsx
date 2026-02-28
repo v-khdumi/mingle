@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { UserProfile } from '@/lib/types';
-import { generateBio } from '@/lib/ai';
+import { generateBio, analyzeProfileConsistency } from '@/lib/ai';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
 import { ArrowRight, X, Plus, Camera, ShieldCheck, UploadSimple, Sparkle, Warning } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
@@ -35,8 +37,10 @@ const LIFESTYLE_OPTIONS = [
 ];
 
 export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
+  const { t } = useI18n();
   const [step, setStep] = useState(initialProfile ? FIRST_PROFILE_EDIT_STEP : 1);
   const [isGeneratingBio, setIsGeneratingBio] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [profile, setProfile] = useState<Partial<UserProfile>>(
     initialProfile || {
       values: [],
@@ -53,7 +57,7 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
     }
   );
 
-  const totalSteps = 7;
+  const totalSteps = 10;
   const progress = (step / totalSteps) * 100;
 
   const addItem = (field: 'values' | 'interests' | 'lifestyle' | 'languages', item: string) => {
@@ -79,28 +83,56 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
       case 4:
         return profile.name && profile.name.trim().length > 0;
       case 5:
-        return (profile.values?.length || 0) >= 2 && (profile.interests?.length || 0) >= 2;
+        return true; // lifestyle questions are mostly optional
       case 6:
-        return (profile.lifestyle?.length || 0) >= 1 && (profile.languages?.length || 0) >= 1;
+        return true; // career questions optional
+      case 7:
+        return profile.lookingFor; // at least relationship intent
+      case 8:
+        return true; // deal-breakers optional
+      case 9:
+        return true; // fun questions optional
       default:
         return true;
     }
   };
 
-  const handleSubmit = () => {
-    if (canProceed()) {
+  const handleSubmit = async () => {
+    if (!canProceed()) return;
+
+    // Run AI consistency check before submitting
+    setIsAnalyzing(true);
+    try {
+      const consistency = await analyzeProfileConsistency(profile);
+      const updatedProfile = {
+        ...profile,
+        authenticityScore: consistency.score,
+        consistencyFlags: consistency.flags,
+      } as UserProfile;
+
+      if (!consistency.passed) {
+        toast.warning(t.form.consistencyWarning);
+      } else {
+        toast.success(t.form.consistencyPassed);
+      }
+
+      onComplete(updatedProfile);
+    } catch {
+      toast.info(t.form.consistencyPassed);
       onComplete(profile as UserProfile);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
   const simulatePhotoUpload = () => {
     setProfile({ ...profile, photoUploaded: true });
-    toast.success('Photo uploaded successfully! Face detected.');
+    toast.success(t.form.photoSuccess);
   };
 
   const simulateLivenessCheck = () => {
     setProfile({ ...profile, livenessVerified: true });
-    toast.success('Liveness verification passed!');
+    toast.success(t.form.livenessSuccess);
   };
 
   const handleGenerateBio = async () => {
@@ -108,9 +140,9 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
     try {
       const bio = await generateBio(profile);
       setProfile({ ...profile, bio });
-      toast.success('Bio generated! You can edit it below.');
+      toast.success(t.form.bioGenerated);
     } catch {
-      toast.error('Failed to generate bio. You can write one manually.');
+      toast.error(t.form.bioFailed);
     } finally {
       setIsGeneratingBio(false);
     }
@@ -120,15 +152,16 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
         <Progress value={progress} className="h-2 mb-2" />
-        <p className="text-sm text-muted-foreground">Step {step} of {totalSteps}</p>
+        <p className="text-sm text-muted-foreground">{t.form.stepOf(step, totalSteps)}</p>
       </div>
 
       <Card className="p-8">
+        {/* Step 1: Consent */}
         {step === 1 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold mb-2">Welcome to Mingle</h2>
-              <p className="text-muted-foreground">Before we begin, we need to verify a few things</p>
+              <h2 className="text-2xl font-bold mb-2">{t.form.welcomeTitle}</h2>
+              <p className="text-muted-foreground">{t.form.welcomeSubtitle}</p>
             </div>
 
             <div className="space-y-4">
@@ -138,18 +171,14 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                     type="checkbox"
                     id="ageConfirmed"
                     checked={profile.ageConfirmed || false}
-                    onChange={(e) =>
-                      setProfile({ ...profile, ageConfirmed: e.target.checked })
-                    }
+                    onChange={(e) => setProfile({ ...profile, ageConfirmed: e.target.checked })}
                     className="mt-1"
                   />
                   <div className="flex-1">
                     <Label htmlFor="ageConfirmed" className="cursor-pointer font-medium">
-                      I confirm I am 18 years or older
+                      {t.form.ageConfirm}
                     </Label>
-                    <p className="text-sm text-muted-foreground">
-                      This platform is for adults only (18+). By checking this box, you confirm you meet this requirement.
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t.form.ageConfirmDesc}</p>
                   </div>
                 </div>
               </div>
@@ -160,20 +189,14 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                     type="checkbox"
                     id="consentGiven"
                     checked={profile.consentGiven || false}
-                    onChange={(e) =>
-                      setProfile({ ...profile, consentGiven: e.target.checked })
-                    }
+                    onChange={(e) => setProfile({ ...profile, consentGiven: e.target.checked })}
                     className="mt-1"
                   />
                   <div className="flex-1">
                     <Label htmlFor="consentGiven" className="cursor-pointer font-medium">
-                      I consent to data processing
+                      {t.form.consentData}
                     </Label>
-                    <p className="text-sm text-muted-foreground">
-                      I agree to the processing of my personal data for matching purposes. Sensitive data
-                      (biometrics, astrology, attractiveness, salary) is optional and can be withdrawn at any time.
-                      Data is encrypted at rest and in transit, per GDPR/EU AI Act.
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t.form.consentDataDesc}</p>
                   </div>
                 </div>
               </div>
@@ -181,18 +204,19 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
               {!profile.ageConfirmed && (
                 <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
                   <Warning size={16} />
-                  <span>You must confirm you are 18+ to continue.</span>
+                  <span>{t.form.ageWarning}</span>
                 </div>
               )}
             </div>
           </div>
         )}
 
+        {/* Step 2: Photo Upload */}
         {step === 2 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold mb-2">Upload Your Photo</h2>
-              <p className="text-muted-foreground">At least one clear face photo is required</p>
+              <h2 className="text-2xl font-bold mb-2">{t.form.photoTitle}</h2>
+              <p className="text-muted-foreground">{t.form.photoSubtitle}</p>
             </div>
 
             <div className="space-y-4">
@@ -202,23 +226,19 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white mx-auto">
                       <ShieldCheck size={48} weight="duotone" />
                     </div>
-                    <p className="font-medium text-green-700">Photo uploaded & face detected</p>
-                    <p className="text-sm text-muted-foreground">
-                      Our system verified this is a clear face photo (no deepfake/AI-generated images allowed).
-                    </p>
+                    <p className="font-medium text-green-700">{t.form.photoUploaded}</p>
+                    <p className="text-sm text-muted-foreground">{t.form.photoVerifiedDesc}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mx-auto">
                       <UploadSimple size={48} className="text-muted-foreground" />
                     </div>
-                    <p className="font-medium">Upload a clear photo of your face</p>
-                    <p className="text-sm text-muted-foreground">
-                      We automatically verify photos and reject fake/deepfake, non-face, or non-conforming images.
-                    </p>
+                    <p className="font-medium">{t.form.photoUploadPrompt}</p>
+                    <p className="text-sm text-muted-foreground">{t.form.photoUploadDesc}</p>
                     <Button onClick={simulatePhotoUpload}>
                       <UploadSimple className="mr-2" />
-                      Choose Photo
+                      {t.form.choosePhoto}
                     </Button>
                   </div>
                 )}
@@ -227,11 +247,12 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
           </div>
         )}
 
+        {/* Step 3: Liveness Verification */}
         {step === 3 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold mb-2">Liveness Verification</h2>
-              <p className="text-muted-foreground">Quick camera check to verify you're a real person</p>
+              <h2 className="text-2xl font-bold mb-2">{t.form.livenessTitle}</h2>
+              <p className="text-muted-foreground">{t.form.livenessSubtitle}</p>
             </div>
 
             <div className="space-y-4">
@@ -241,23 +262,19 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white mx-auto">
                       <ShieldCheck size={48} weight="duotone" />
                     </div>
-                    <p className="font-medium text-green-700">Liveness verified!</p>
-                    <p className="text-sm text-muted-foreground">
-                      You've been verified as a real person. This earns you a trust badge on your profile.
-                    </p>
+                    <p className="font-medium text-green-700">{t.form.livenessVerified}</p>
+                    <p className="text-sm text-muted-foreground">{t.form.livenessVerifiedDesc}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mx-auto">
                       <Camera size={48} className="text-muted-foreground" />
                     </div>
-                    <p className="font-medium">Look into your camera</p>
-                    <p className="text-sm text-muted-foreground">
-                      We'll do a quick liveness check using your device's camera to prevent fake accounts and ensure safety.
-                    </p>
+                    <p className="font-medium">{t.form.livenessPrompt}</p>
+                    <p className="text-sm text-muted-foreground">{t.form.livenessDesc}</p>
                     <Button onClick={simulateLivenessCheck}>
                       <Camera className="mr-2" />
-                      Start Verification
+                      {t.form.startVerification}
                     </Button>
                   </div>
                 )}
@@ -266,28 +283,29 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
           </div>
         )}
 
+        {/* Step 4: Who Are You? (Identity & Personality) */}
         {step === 4 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold mb-2">About You</h2>
-              <p className="text-muted-foreground">Let's start building your profile</p>
+              <h2 className="text-2xl font-bold mb-2">{t.form.identityTitle}</h2>
+              <p className="text-muted-foreground">{t.form.identitySubtitle}</p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">What's your name?</Label>
+                <Label htmlFor="name">{t.form.nameLabel}</Label>
                 <Input
                   id="name"
                   value={profile.name || ''}
                   onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                  placeholder="Your name"
+                  placeholder={t.form.namePlaceholder}
                   className="mt-2"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <Label htmlFor="bio">Short bio</Label>
+                  <Label htmlFor="bio">{t.form.bioLabel}</Label>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -295,168 +313,353 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                     disabled={isGeneratingBio || !profile.name}
                   >
                     <Sparkle className="mr-1" size={14} />
-                    {isGeneratingBio ? 'Generating...' : 'Generate with AI'}
+                    {isGeneratingBio ? t.form.bioGenerating : t.form.bioGenerate}
                   </Button>
                 </div>
                 <Textarea
                   id="bio"
                   value={profile.bio || ''}
                   onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                  placeholder="Tell us a bit about yourself... or let AI help!"
+                  placeholder={t.form.bioPlaceholder}
                   className="mt-1 min-h-24"
                   maxLength={200}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {(profile.bio || '').length}/200 characters — AI-generated bios can be freely edited
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 5 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Your Values & Interests</h2>
-              <p className="text-muted-foreground">Select at least 2 of each</p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label>Your Core Values</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {COMMON_VALUES.map((value) => (
-                    <Badge
-                      key={value}
-                      variant={profile.values?.includes(value) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:scale-105 transition-transform"
-                      onClick={() =>
-                        profile.values?.includes(value)
-                          ? removeItem('values', value)
-                          : addItem('values', value)
-                      }
-                    >
-                      {value}
-                      {profile.values?.includes(value) && <X className="ml-1 h-3 w-3" />}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Selected: {profile.values?.length || 0}
+                  {t.form.bioCharCount((profile.bio || '').length)}
                 </p>
               </div>
 
               <div>
-                <Label>Your Interests</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {COMMON_INTERESTS.map((interest) => (
-                    <Badge
-                      key={interest}
-                      variant={profile.interests?.includes(interest) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:scale-105 transition-transform"
-                      onClick={() =>
-                        profile.interests?.includes(interest)
-                          ? removeItem('interests', interest)
-                          : addItem('interests', interest)
-                      }
-                    >
-                      {interest}
-                      {profile.interests?.includes(interest) && <X className="ml-1 h-3 w-3" />}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Selected: {profile.interests?.length || 0}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 6 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Lifestyle & Work</h2>
-              <p className="text-muted-foreground">Help us understand your day-to-day</p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label>Lifestyle Traits</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {LIFESTYLE_OPTIONS.map((trait) => (
-                    <Badge
-                      key={trait}
-                      variant={profile.lifestyle?.includes(trait) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:scale-105 transition-transform"
-                      onClick={() =>
-                        profile.lifestyle?.includes(trait)
-                          ? removeItem('lifestyle', trait)
-                          : addItem('lifestyle', trait)
-                      }
-                    >
-                      {trait}
-                      {profile.lifestyle?.includes(trait) && <X className="ml-1 h-3 w-3" />}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="workSchedule">Work Schedule (optional)</Label>
-                <Select
-                  value={profile.workSchedule || ''}
-                  onValueChange={(value) => setProfile({ ...profile, workSchedule: value })}
-                >
-                  <SelectTrigger id="workSchedule" className="mt-2">
-                    <SelectValue placeholder="Select your schedule" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Regular hours (9-5)">Regular hours (9-5)</SelectItem>
-                    <SelectItem value="Flexible (9-6 with remote options)">Flexible</SelectItem>
-                    <SelectItem value="Shifts (variable)">Shifts</SelectItem>
-                    <SelectItem value="Project-based">Project-based</SelectItem>
-                    <SelectItem value="Irregular (startup life)">Irregular</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="industry">Industry (optional)</Label>
+                <Label htmlFor="friendsDescribe">{t.form.friendsDescribe}</Label>
                 <Input
-                  id="industry"
-                  value={profile.industry || ''}
-                  onChange={(e) => setProfile({ ...profile, industry: e.target.value })}
-                  placeholder="e.g., Technology, Healthcare, Education"
+                  id="friendsDescribe"
+                  value={profile.friendsDescribe || ''}
+                  onChange={(e) => setProfile({ ...profile, friendsDescribe: e.target.value })}
+                  placeholder={t.form.friendsDescribePlaceholder}
                   className="mt-2"
                 />
               </div>
 
               <div>
-                <Label htmlFor="education">Education (optional)</Label>
+                <Label htmlFor="proudest">{t.form.proudestAchievement}</Label>
+                <Textarea
+                  id="proudest"
+                  value={profile.proudestAchievement || ''}
+                  onChange={(e) => setProfile({ ...profile, proudestAchievement: e.target.value })}
+                  placeholder={t.form.proudestPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label>{t.form.plannerOrSpontaneous}</Label>
                 <Select
-                  value={profile.education || ''}
-                  onValueChange={(value) => setProfile({ ...profile, education: value })}
+                  value={profile.plannerOrSpontaneous || ''}
+                  onValueChange={(v) => setProfile({ ...profile, plannerOrSpontaneous: v })}
                 >
-                  <SelectTrigger id="education" className="mt-2">
-                    <SelectValue placeholder="Select education level" />
-                  </SelectTrigger>
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="High School">High School</SelectItem>
-                    <SelectItem value="Bachelor's Degree">Bachelor's Degree</SelectItem>
-                    <SelectItem value="Master's Degree">Master's Degree</SelectItem>
-                    <SelectItem value="PhD">PhD</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="planner">{t.form.plannerOption}</SelectItem>
+                    <SelectItem value="spontaneous">{t.form.spontaneousOption}</SelectItem>
+                    <SelectItem value="mix">{t.form.mixBothOption}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="language-input">Languages Spoken</Label>
+                <Label htmlFor="stressReaction">{t.form.stressReaction}</Label>
+                <Textarea
+                  id="stressReaction"
+                  value={profile.stressReaction || ''}
+                  onChange={(e) => setProfile({ ...profile, stressReaction: e.target.value })}
+                  placeholder={t.form.stressPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="laugh">{t.form.whatMakesYouLaugh}</Label>
+                <Input
+                  id="laugh"
+                  value={profile.whatMakesYouLaugh || ''}
+                  onChange={(e) => setProfile({ ...profile, whatMakesYouLaugh: e.target.value })}
+                  placeholder={t.form.laughPlaceholder}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="coreValue">{t.form.coreValue}</Label>
+                <Input
+                  id="coreValue"
+                  value={profile.coreValue || ''}
+                  onChange={(e) => setProfile({ ...profile, coreValue: e.target.value })}
+                  placeholder={t.form.coreValuePlaceholder}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label>{t.form.introExtrovert}</Label>
+                <Select
+                  value={profile.introExtrovert || ''}
+                  onValueChange={(v) => setProfile({ ...profile, introExtrovert: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="introvert">{t.form.introvertOption}</SelectItem>
+                    <SelectItem value="extrovert">{t.form.extrovertOption}</SelectItem>
+                    <SelectItem value="ambivert">{t.form.ambivertOption}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="flaw">{t.form.biggestFlaw}</Label>
+                <Input
+                  id="flaw"
+                  value={profile.biggestFlaw || ''}
+                  onChange={(e) => setProfile({ ...profile, biggestFlaw: e.target.value })}
+                  placeholder={t.form.biggestFlawPlaceholder}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Lifestyle */}
+        {step === 5 && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">{t.form.lifestyleTitle}</h2>
+              <p className="text-muted-foreground">{t.form.lifestyleSubtitle}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="perfectDay">{t.form.perfectDay}</Label>
+                <Textarea
+                  id="perfectDay"
+                  value={profile.perfectDay || ''}
+                  onChange={(e) => setProfile({ ...profile, perfectDay: e.target.value })}
+                  placeholder={t.form.perfectDayPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label>{t.form.morningOrNight}</Label>
+                <Select
+                  value={profile.morningOrNight || ''}
+                  onValueChange={(v) => setProfile({ ...profile, morningOrNight: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="morning">{t.form.morningOption}</SelectItem>
+                    <SelectItem value="night">{t.form.nightOption}</SelectItem>
+                    <SelectItem value="depends">{t.form.dependsOption}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>{t.form.exerciseRegularly}</Label>
+                <Select
+                  value={profile.exerciseHabit || ''}
+                  onValueChange={(v) => setProfile({ ...profile, exerciseHabit: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">{t.form.exerciseYes}</SelectItem>
+                    <SelectItem value="sometimes">{t.form.exerciseSometimes}</SelectItem>
+                    <SelectItem value="no">{t.form.exerciseNo}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="weekendActivity">{t.form.weekendActivity}</Label>
+                <Textarea
+                  id="weekendActivity"
+                  value={profile.weekendActivity || ''}
+                  onChange={(e) => setProfile({ ...profile, weekendActivity: e.target.value })}
+                  placeholder={t.form.weekendPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label>{t.form.pets}</Label>
+                <Select
+                  value={profile.pets || ''}
+                  onValueChange={(v) => setProfile({ ...profile, pets: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="have">{t.form.petsYesHave}</SelectItem>
+                    <SelectItem value="like">{t.form.petsYesLike}</SelectItem>
+                    <SelectItem value="no">{t.form.petsNo}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>{t.form.cookOrEatOut}</Label>
+                <Select
+                  value={profile.cookOrEatOut || ''}
+                  onValueChange={(v) => setProfile({ ...profile, cookOrEatOut: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cook">{t.form.cookOption}</SelectItem>
+                    <SelectItem value="eatout">{t.form.eatOutOption}</SelectItem>
+                    <SelectItem value="both">{t.form.bothOption}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>{t.form.smokingDrinking}</Label>
+                <Select
+                  value={profile.smokingDrinking || ''}
+                  onValueChange={(v) => setProfile({ ...profile, smokingDrinking: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="neither">{t.form.neitherOption}</SelectItem>
+                    <SelectItem value="drink">{t.form.drinkOccasionally}</SelectItem>
+                    <SelectItem value="both">{t.form.smokeAndDrink}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="spirituality">{t.form.spirituality}</Label>
+                <Textarea
+                  id="spirituality"
+                  value={profile.spirituality || ''}
+                  onChange={(e) => setProfile({ ...profile, spirituality: e.target.value })}
+                  placeholder={t.form.spiritualityPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: Career & Ambitions */}
+        {step === 6 && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">{t.form.careerTitle}</h2>
+              <p className="text-muted-foreground">{t.form.careerSubtitle}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="industry">{t.form.workField}</Label>
+                <Input
+                  id="industry"
+                  value={profile.industry || ''}
+                  onChange={(e) => setProfile({ ...profile, industry: e.target.value })}
+                  placeholder={t.form.workFieldPlaceholder}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label>{t.form.passionateAboutWork}</Label>
+                <Select
+                  value={profile.passionateAboutWork || ''}
+                  onValueChange={(v) => setProfile({ ...profile, passionateAboutWork: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="passionate">{t.form.passionateYes}</SelectItem>
+                    <SelectItem value="neutral">{t.form.passionateNeutral}</SelectItem>
+                    <SelectItem value="just-job">{t.form.passionateNo}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>{t.form.workScheduleLabel}</Label>
+                <Select
+                  value={profile.workSchedule || ''}
+                  onValueChange={(v) => setProfile({ ...profile, workSchedule: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Regular hours (9-5)">{t.form.workScheduleRegular}</SelectItem>
+                    <SelectItem value="Flexible (9-6 with remote options)">{t.form.workScheduleFlexible}</SelectItem>
+                    <SelectItem value="Shifts (variable)">{t.form.workScheduleShifts}</SelectItem>
+                    <SelectItem value="Irregular (startup life)">{t.form.workScheduleIrregular}</SelectItem>
+                    <SelectItem value="Evenings/Nights">{t.form.workScheduleEvening}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="biggestDream">{t.form.biggestDream}</Label>
+                <Textarea
+                  id="biggestDream"
+                  value={profile.biggestDream || ''}
+                  onChange={(e) => setProfile({ ...profile, biggestDream: e.target.value })}
+                  placeholder={t.form.biggestDreamPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label>{t.form.financialImportance}</Label>
+                <div className="flex items-center gap-4 mt-2">
+                  <Slider
+                    value={[profile.financialImportance || 5]}
+                    onValueChange={(v) => setProfile({ ...profile, financialImportance: v[0] })}
+                    min={1}
+                    max={10}
+                    step={1}
+                    className="flex-1"
+                  />
+                  <span className="text-lg font-bold w-8 text-center">{profile.financialImportance || 5}</span>
+                </div>
+              </div>
+
+              <div>
+                <Label>{t.form.educationLevel}</Label>
+                <Select
+                  value={profile.education || ''}
+                  onValueChange={(v) => setProfile({ ...profile, education: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="High School">{t.form.educationHighSchool}</SelectItem>
+                    <SelectItem value="Bachelor's Degree">{t.form.educationBachelor}</SelectItem>
+                    <SelectItem value="Master's Degree">{t.form.educationMaster}</SelectItem>
+                    <SelectItem value="PhD">{t.form.educationPhD}</SelectItem>
+                    <SelectItem value="Other">{t.form.educationOther}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="travelExperience">{t.form.travelExperience}</Label>
+                <Textarea
+                  id="travelExperience"
+                  value={profile.travelExperience || ''}
+                  onChange={(e) => setProfile({ ...profile, travelExperience: e.target.value })}
+                  placeholder={t.form.travelPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="language-input">{t.form.languagesLabel}</Label>
                 <div className="flex gap-2 mt-2">
                   <Input
                     id="language-input"
-                    placeholder="Add a language"
+                    placeholder={t.form.languagePlaceholder}
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
                         const input = e.currentTarget;
@@ -497,11 +700,305 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
           </div>
         )}
 
+        {/* Step 7: Relationships & Love */}
         {step === 7 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold mb-2">Optional Details</h2>
-              <p className="text-muted-foreground">These help improve match quality (all optional, with explicit consent)</p>
+              <h2 className="text-2xl font-bold mb-2">{t.form.relationshipsTitle}</h2>
+              <p className="text-muted-foreground">{t.form.relationshipsSubtitle}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label>{t.form.lookingFor}</Label>
+                <Select
+                  value={profile.lookingFor || ''}
+                  onValueChange={(v) => setProfile({ ...profile, lookingFor: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="serious">{t.form.lookingSerious}</SelectItem>
+                    <SelectItem value="casual">{t.form.lookingCasual}</SelectItem>
+                    <SelectItem value="friendship">{t.form.lookingFriendship}</SelectItem>
+                    <SelectItem value="marriage">{t.form.lookingMarriage}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="healthyRel">{t.form.healthyRelationship}</Label>
+                <Textarea
+                  id="healthyRel"
+                  value={profile.healthyRelationship || ''}
+                  onChange={(e) => setProfile({ ...profile, healthyRelationship: e.target.value })}
+                  placeholder={t.form.healthyRelPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="partnerQuality">{t.form.partnerQuality}</Label>
+                <Input
+                  id="partnerQuality"
+                  value={profile.partnerQuality || ''}
+                  onChange={(e) => setProfile({ ...profile, partnerQuality: e.target.value })}
+                  placeholder={t.form.partnerQualityPlaceholder}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="conflictStyle">{t.form.conflictStyle}</Label>
+                <Textarea
+                  id="conflictStyle"
+                  value={profile.conflictStyle || ''}
+                  onChange={(e) => setProfile({ ...profile, conflictStyle: e.target.value })}
+                  placeholder={t.form.conflictPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label>{t.form.loveLanguage}</Label>
+                <Select
+                  value={profile.loveLanguage || ''}
+                  onValueChange={(v) => setProfile({ ...profile, loveLanguage: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="words">{t.form.loveWords}</SelectItem>
+                    <SelectItem value="time">{t.form.loveTime}</SelectItem>
+                    <SelectItem value="gifts">{t.form.loveGifts}</SelectItem>
+                    <SelectItem value="acts">{t.form.loveActs}</SelectItem>
+                    <SelectItem value="touch">{t.form.loveTouch}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>{t.form.wantChildren}</Label>
+                <Select
+                  value={profile.wantChildren || ''}
+                  onValueChange={(v) => setProfile({ ...profile, wantChildren: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="have">{t.form.childrenHave}</SelectItem>
+                    <SelectItem value="want">{t.form.childrenWant}</SelectItem>
+                    <SelectItem value="no">{t.form.childrenNo}</SelectItem>
+                    <SelectItem value="unsure">{t.form.childrenUnsure}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 8: Compatibility & Deal-Breakers */}
+        {step === 8 && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">{t.form.compatibilityTitle}</h2>
+              <p className="text-muted-foreground">{t.form.compatibilitySubtitle}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="attractiveQuality">{t.form.attractiveQuality}</Label>
+                <Input
+                  id="attractiveQuality"
+                  value={profile.attractiveQuality || ''}
+                  onChange={(e) => setProfile({ ...profile, attractiveQuality: e.target.value })}
+                  placeholder={t.form.attractivePlaceholder}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="dealBreaker">{t.form.dealBreaker}</Label>
+                <Input
+                  id="dealBreaker"
+                  value={profile.dealBreaker || ''}
+                  onChange={(e) => setProfile({ ...profile, dealBreaker: e.target.value })}
+                  placeholder={t.form.dealBreakerPlaceholder}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label>{t.form.longDistance}</Label>
+                <Select
+                  value={profile.longDistance || ''}
+                  onValueChange={(v) => setProfile({ ...profile, longDistance: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">{t.form.longDistanceYes}</SelectItem>
+                    <SelectItem value="temp">{t.form.longDistanceTemp}</SelectItem>
+                    <SelectItem value="no">{t.form.longDistanceNo}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="fidelityView">{t.form.fidelityView}</Label>
+                <Textarea
+                  id="fidelityView"
+                  value={profile.fidelityView || ''}
+                  onChange={(e) => setProfile({ ...profile, fidelityView: e.target.value })}
+                  placeholder={t.form.fidelityPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label>{t.form.paceInRelationship}</Label>
+                <Select
+                  value={profile.paceInRelationship || ''}
+                  onValueChange={(v) => setProfile({ ...profile, paceInRelationship: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="quick">{t.form.paceQuick}</SelectItem>
+                    <SelectItem value="slow">{t.form.paceSlow}</SelectItem>
+                    <SelectItem value="depends">{t.form.paceDepends}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>{t.form.personalSpace}</Label>
+                <Select
+                  value={profile.personalSpace || ''}
+                  onValueChange={(v) => setProfile({ ...profile, personalSpace: v })}
+                >
+                  <SelectTrigger className="mt-2"><SelectValue placeholder={t.form.selectPlaceholder} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="together">{t.form.spaceTogether}</SelectItem>
+                    <SelectItem value="balance">{t.form.spaceBalance}</SelectItem>
+                    <SelectItem value="independent">{t.form.spaceIndependent}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Values & Interests selection */}
+              <div className="pt-4 border-t">
+                <Label>{t.profileDisplay.values}</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {COMMON_VALUES.map((value) => (
+                    <Badge
+                      key={value}
+                      variant={profile.values?.includes(value) ? 'default' : 'outline'}
+                      className="cursor-pointer hover:scale-105 transition-transform"
+                      onClick={() =>
+                        profile.values?.includes(value)
+                          ? removeItem('values', value)
+                          : addItem('values', value)
+                      }
+                    >
+                      {value}
+                      {profile.values?.includes(value) && <X className="ml-1 h-3 w-3" />}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label>{t.profileDisplay.interests}</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {COMMON_INTERESTS.map((interest) => (
+                    <Badge
+                      key={interest}
+                      variant={profile.interests?.includes(interest) ? 'default' : 'outline'}
+                      className="cursor-pointer hover:scale-105 transition-transform"
+                      onClick={() =>
+                        profile.interests?.includes(interest)
+                          ? removeItem('interests', interest)
+                          : addItem('interests', interest)
+                      }
+                    >
+                      {interest}
+                      {profile.interests?.includes(interest) && <X className="ml-1 h-3 w-3" />}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label>{t.profileDisplay.lifestyle}</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {LIFESTYLE_OPTIONS.map((trait) => (
+                    <Badge
+                      key={trait}
+                      variant={profile.lifestyle?.includes(trait) ? 'default' : 'outline'}
+                      className="cursor-pointer hover:scale-105 transition-transform"
+                      onClick={() =>
+                        profile.lifestyle?.includes(trait)
+                          ? removeItem('lifestyle', trait)
+                          : addItem('lifestyle', trait)
+                      }
+                    >
+                      {trait}
+                      {profile.lifestyle?.includes(trait) && <X className="ml-1 h-3 w-3" />}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 9: Fun & Essence */}
+        {step === 9 && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">{t.form.funTitle}</h2>
+              <p className="text-muted-foreground">{t.form.funSubtitle}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="lifeAsMovie">{t.form.lifeAsMovie}</Label>
+                <Input
+                  id="lifeAsMovie"
+                  value={profile.lifeAsMovie || ''}
+                  onChange={(e) => setProfile({ ...profile, lifeAsMovie: e.target.value })}
+                  placeholder={t.form.lifeMoviePlaceholder}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="surprisingFact">{t.form.surprisingFact}</Label>
+                <Textarea
+                  id="surprisingFact"
+                  value={profile.surprisingFact || ''}
+                  onChange={(e) => setProfile({ ...profile, surprisingFact: e.target.value })}
+                  placeholder={t.form.surprisingPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ifCouldntFail">{t.form.ifCouldntFail}</Label>
+                <Textarea
+                  id="ifCouldntFail"
+                  value={profile.ifCouldntFail || ''}
+                  onChange={(e) => setProfile({ ...profile, ifCouldntFail: e.target.value })}
+                  placeholder={t.form.ifCouldntFailPlaceholder}
+                  className="mt-2 min-h-16"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 10: Optional Details */}
+        {step === 10 && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">{t.form.optionalTitle}</h2>
+              <p className="text-muted-foreground">{t.form.optionalSubtitle}</p>
             </div>
 
             <div className="space-y-4">
@@ -511,24 +1008,20 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                     type="checkbox"
                     id="optInAstrology"
                     checked={profile.optInAstrology}
-                    onChange={(e) =>
-                      setProfile({ ...profile, optInAstrology: e.target.checked })
-                    }
+                    onChange={(e) => setProfile({ ...profile, optInAstrology: e.target.checked })}
                     className="mt-1"
                   />
                   <div className="flex-1">
                     <Label htmlFor="optInAstrology" className="cursor-pointer font-medium">
-                      Include Astrology
+                      {t.form.includeAstrology}
                     </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get compatibility insights based on zodiac signs. Requires birth date.
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t.form.astrologyDesc}</p>
                   </div>
                 </div>
 
                 {profile.optInAstrology && (
                   <div>
-                    <Label htmlFor="birthDate">Birth Date</Label>
+                    <Label htmlFor="birthDate">{t.form.birthDate}</Label>
                     <Input
                       id="birthDate"
                       type="date"
@@ -546,50 +1039,44 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                     type="checkbox"
                     id="optInAttractiveness"
                     checked={profile.optInAttractiveness}
-                    onChange={(e) =>
-                      setProfile({ ...profile, optInAttractiveness: e.target.checked })
-                    }
+                    onChange={(e) => setProfile({ ...profile, optInAttractiveness: e.target.checked })}
                     className="mt-1"
                   />
                   <div className="flex-1">
                     <Label htmlFor="optInAttractiveness" className="cursor-pointer font-medium">
-                      Include Attractiveness Factor
+                      {t.form.includeAttractiveness}
                     </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow AI to consider attractiveness in matching. No score is ever shown to users.
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t.form.attractivenessDesc}</p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="height">Height (optional)</Label>
+                <Label htmlFor="height">{t.form.height}</Label>
                 <Input
                   id="height"
                   value={profile.height || ''}
                   onChange={(e) => setProfile({ ...profile, height: e.target.value })}
-                  placeholder="e.g., 175cm"
+                  placeholder={t.form.heightPlaceholder}
                   className="mt-2"
                 />
               </div>
 
               <div>
-                <Label htmlFor="dietaryPreferences">Dietary Preferences (optional)</Label>
+                <Label htmlFor="dietaryPreferences">{t.form.dietaryPreferences}</Label>
                 <Select
                   value={profile.dietaryPreferences || ''}
-                  onValueChange={(value) =>
-                    setProfile({ ...profile, dietaryPreferences: value })
-                  }
+                  onValueChange={(v) => setProfile({ ...profile, dietaryPreferences: v })}
                 >
                   <SelectTrigger id="dietaryPreferences" className="mt-2">
-                    <SelectValue placeholder="Select dietary preference" />
+                    <SelectValue placeholder={t.form.selectPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="No restrictions">No restrictions</SelectItem>
-                    <SelectItem value="Vegetarian">Vegetarian</SelectItem>
-                    <SelectItem value="Vegan">Vegan</SelectItem>
-                    <SelectItem value="Pescatarian">Pescatarian</SelectItem>
-                    <SelectItem value="Flexitarian">Flexitarian</SelectItem>
+                    <SelectItem value="No restrictions">{t.form.dietaryNone}</SelectItem>
+                    <SelectItem value="Vegetarian">{t.form.dietaryVegetarian}</SelectItem>
+                    <SelectItem value="Vegan">{t.form.dietaryVegan}</SelectItem>
+                    <SelectItem value="Pescatarian">{t.form.dietaryPescatarian}</SelectItem>
+                    <SelectItem value="Flexitarian">{t.form.dietaryFlexitarian}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -605,22 +1092,20 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
                   />
                   <div className="flex-1">
                     <Label htmlFor="optInSalary" className="cursor-pointer font-medium">
-                      Include Salary Range
+                      {t.form.includeSalary}
                     </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Optional, kept private, used only as an approximation for compatibility.
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t.form.salaryDesc}</p>
                   </div>
                 </div>
 
                 {profile.optInSalary && (
                   <div>
-                    <Label htmlFor="salaryRange">Salary Range</Label>
+                    <Label htmlFor="salaryRange">{t.form.salaryRange}</Label>
                     <Input
                       id="salaryRange"
                       value={profile.salaryRange || ''}
                       onChange={(e) => setProfile({ ...profile, salaryRange: e.target.value })}
-                      placeholder="e.g., €40k-60k"
+                      placeholder={t.form.salaryPlaceholder}
                       className="mt-2"
                     />
                   </div>
@@ -630,10 +1115,11 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
           </div>
         )}
 
+        {/* Navigation buttons */}
         <div className="flex gap-3 mt-8">
           {step > 1 && (
             <Button variant="outline" onClick={() => setStep(step - 1)}>
-              Back
+              {t.form.back}
             </Button>
           )}
 
@@ -643,15 +1129,15 @@ export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
               onClick={() => setStep(step + 1)}
               disabled={!canProceed()}
             >
-              Continue <ArrowRight className="ml-2" />
+              {t.form.continue} <ArrowRight className="ml-2" />
             </Button>
           ) : (
             <Button
               className="ml-auto bg-gradient-to-r from-primary to-accent"
               onClick={handleSubmit}
-              disabled={!canProceed()}
+              disabled={!canProceed() || isAnalyzing}
             >
-              Find Matches <ArrowRight className="ml-2" />
+              {isAnalyzing ? t.form.analyzingProfile : t.form.findMatches} <ArrowRight className="ml-2" />
             </Button>
           )}
         </div>
