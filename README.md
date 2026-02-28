@@ -34,13 +34,20 @@ Click the button above to deploy all required Azure resources automatically.
 | Resource | Type | Purpose |
 |----------|------|---------|
 | Azure Static Web App | `Microsoft.Web/staticSites` | Hosts the React SPA with global CDN, free SSL, and staging environments for PRs |
+| Azure OpenAI | `Microsoft.CognitiveServices/accounts` | AI-powered compatibility matching, icebreakers, horoscopes, and profile analysis (GPT-4o & GPT-4o-mini) |
+| Azure Cosmos DB | `Microsoft.DocumentDB/databaseAccounts` | Serverless NoSQL database for user profiles and match data |
 
-The template also includes a `staticwebapp.config.json` that configures SPA navigation fallback routing and security headers.
+The template also:
+- Deploys **GPT-4o** and **GPT-4o-mini** model deployments in the OpenAI account
+- Creates a **mingle** database with a **profiles** container in Cosmos DB
+- Configures the Static Web App with `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_KEY`, `COSMOS_DB_ENDPOINT`, `COSMOS_DB_KEY`, `COSMOS_DB_DATABASE`, and `COSMOS_DB_CONTAINER` app settings automatically
+- Includes a `staticwebapp.config.json` that configures SPA navigation fallback routing and security headers
 
 ### Prerequisites
 
 - An [Azure subscription](https://azure.microsoft.com/free/)
 - A GitHub account (for CI/CD integration)
+- Access to Azure OpenAI Service (you may need to [request access](https://aka.ms/oai/access))
 
 ### Setup steps
 

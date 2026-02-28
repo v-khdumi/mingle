@@ -16,6 +16,15 @@
     },
     "repositoryBranch": {
       "value": "main"
+    },
+    "openAiAccountName": {
+      "value": "mingle-openai"
+    },
+    "openAiLocation": {
+      "value": "swedencentral"
+    },
+    "cosmosDbAccountName": {
+      "value": "mingle-cosmosdb"
     }
   }
 }
