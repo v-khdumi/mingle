@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { UserProfile } from '@/lib/types';
 import { generateBio, analyzeProfileConsistency } from '@/lib/ai';
 import { useI18n } from '@/lib/i18n';
@@ -39,25 +39,25 @@ const LIFESTYLE_OPTIONS = [
 export function ProfileForm({ initialProfile, onComplete }: ProfileFormProps) {
   const { t } = useI18n();
 
-  const COMMON_VALUES_MAP: Record<string, string> = {
+  const COMMON_VALUES_MAP = useMemo<Record<string, string>>(() => ({
     'Honesty': t.form.tagHonesty, 'Growth': t.form.tagGrowth, 'Family': t.form.tagFamily,
     'Creativity': t.form.tagCreativity, 'Adventure': t.form.tagAdventure, 'Empathy': t.form.tagEmpathy,
     'Authenticity': t.form.tagAuthenticity, 'Mindfulness': t.form.tagMindfulness, 'Innovation': t.form.tagInnovation,
     'Compassion': t.form.tagCompassion, 'Optimism': t.form.tagOptimism, 'Stability': t.form.tagStability,
-  };
-  const COMMON_INTERESTS_MAP: Record<string, string> = {
+  }), [t]);
+  const COMMON_INTERESTS_MAP = useMemo<Record<string, string>>(() => ({
     'Travel': t.form.tagTravel, 'Cooking': t.form.tagCooking, 'Hiking': t.form.tagHiking,
     'Reading': t.form.tagReading, 'Photography': t.form.tagPhotography, 'Music': t.form.tagMusic,
     'Art': t.form.tagArt, 'Fitness': t.form.tagFitness, 'Yoga': t.form.tagYoga,
     'Dancing': t.form.tagDancing, 'Gaming': t.form.tagGaming, 'Writing': t.form.tagWriting,
     'Movies': t.form.tagMovies, 'Sports': t.form.tagSports,
-  };
-  const LIFESTYLE_MAP: Record<string, string> = {
+  }), [t]);
+  const LIFESTYLE_MAP = useMemo<Record<string, string>>(() => ({
     'Active': t.form.tagActive, 'Social': t.form.tagSocial, 'Introspective': t.form.tagIntrospective,
     'Adventurous': t.form.tagAdventurous, 'Creative': t.form.tagCreative, 'Health-conscious': t.form.tagHealthConscious,
     'Balanced': t.form.tagBalanced, 'Driven': t.form.tagDriven, 'Relaxed': t.form.tagRelaxed,
     'Spontaneous': t.form.tagSpontaneous, 'Organized': t.form.tagOrganized,
-  };
+  }), [t]);
 
   const [step, setStep] = useState(initialProfile ? FIRST_PROFILE_EDIT_STEP : 1);
   const [isGeneratingBio, setIsGeneratingBio] = useState(false);
