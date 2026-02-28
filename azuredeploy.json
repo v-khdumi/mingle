@@ -125,6 +125,7 @@
         "branch": "[parameters('repositoryBranch')]",
         "buildProperties": {
           "appLocation": "[parameters('appLocation')]",
+          "apiLocation": "api",
           "outputLocation": "[parameters('outputLocation')]",
           "appBuildCommand": "npm run build",
           "skipGithubActionWorkflowGeneration": true
