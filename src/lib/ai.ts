@@ -1,4 +1,4 @@
-import { UserProfile, MatchProfile, CompatibilityResult, HoroscopeReading, SynastryReading } from './types';
+import { UserProfile, MatchProfile, CompatibilityResult, HoroscopeReading, SynastryReading, DatingTip, RelationshipInsight } from './types';
 import { getZodiacSign } from './utils';
 
 async function callLLM(prompt: string, model: string, jsonMode: boolean): Promise<string> {
@@ -295,4 +295,95 @@ Return ONLY valid JSON in this exact format (no other text):
   const response = await callLLM(prompt, 'gpt-4o', true);
   const parsed = JSON.parse(response);
   return parsed.profiles;
+}
+
+export async function generateDatingTips(
+  userProfile: UserProfile
+): Promise<DatingTip[]> {
+  const prompt = `Generate 4 personalized dating tips for the following user. Tailor the tips to their personality and relationship goals.
+
+User Info:
+- Looking for: ${userProfile.lookingFor || 'not specified'}
+- Love language: ${userProfile.loveLanguage || 'not specified'}
+- Values: ${userProfile.values.join(', ')}
+- Interests: ${userProfile.interests.join(', ')}
+- Personality: ${userProfile.introExtrovert || 'not specified'}
+- Conflict style: ${userProfile.conflictStyle || 'not specified'}
+
+Generate one tip per category: conversation, firstDate, relationship, selfGrowth.
+Each tip should be 2-3 sentences, actionable, and feel personal (not generic).
+
+Return ONLY valid JSON in this exact format:
+{
+  "tips": [
+    {
+      "id": "tip-1",
+      "category": "conversation",
+      "title": "string - short catchy title",
+      "content": "string - 2-3 sentence actionable tip",
+      "emoji": "string - single relevant emoji"
+    },
+    {
+      "id": "tip-2",
+      "category": "firstDate",
+      "title": "string",
+      "content": "string",
+      "emoji": "string"
+    },
+    {
+      "id": "tip-3",
+      "category": "relationship",
+      "title": "string",
+      "content": "string",
+      "emoji": "string"
+    },
+    {
+      "id": "tip-4",
+      "category": "selfGrowth",
+      "title": "string",
+      "content": "string",
+      "emoji": "string"
+    }
+  ]
+}`;
+
+  const response = await callLLM(prompt, 'gpt-4o-mini', true);
+  const parsed = JSON.parse(response);
+  return parsed.tips;
+}
+
+export async function generateRelationshipInsight(
+  userProfile: UserProfile
+): Promise<RelationshipInsight> {
+  const prompt = `Create a personalized relationship profile insight for this user. This should be an AI-powered self-discovery analysis.
+
+User Profile:
+- Values: ${userProfile.values.join(', ')}
+- Love language: ${userProfile.loveLanguage || 'not specified'}
+- Looking for: ${userProfile.lookingFor || 'not specified'}
+- Conflict style: ${userProfile.conflictStyle || 'not specified'}
+- Personality: ${userProfile.introExtrovert || 'not specified'}
+- Personal space preference: ${userProfile.personalSpace || 'not specified'}
+- Pace in relationships: ${userProfile.paceInRelationship || 'not specified'}
+- Core value: ${userProfile.coreValue || 'not specified'}
+- Biggest flaw: ${userProfile.biggestFlaw || 'not specified'}
+
+Analyze their relationship style and provide:
+1. A descriptive title for their relationship personality type (e.g., "The Thoughtful Connector")
+2. A 2-3 sentence description of their relationship style
+3. 3 relationship strengths
+4. 2 areas for growth
+5. A weekly challenge to improve their dating life
+
+Return ONLY valid JSON in this exact format:
+{
+  "title": "string - their relationship personality type",
+  "description": "string - 2-3 sentences about their style",
+  "strengths": ["string", "string", "string"],
+  "growthAreas": ["string", "string"],
+  "weeklyChallenge": "string - an actionable weekly challenge"
+}`;
+
+  const response = await callLLM(prompt, 'gpt-4o-mini', true);
+  return JSON.parse(response);
 }

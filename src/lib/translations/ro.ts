@@ -20,6 +20,8 @@ export const ro: Translations = {
   // Tabs
   tabs: {
     matches: 'Potriviri',
+    explore: 'Descoperă',
+    insights: 'Sfaturi',
     horoscope: 'Horoscop',
     profile: 'Profil',
   },
@@ -344,5 +346,43 @@ export const ro: Translations = {
     failedLoad: 'Nu am putut încărca horoscopul',
     failedSynastry: 'Nu am putut încărca sinastria',
     noBirthDate: 'Această potrivire nu a furnizat data nașterii',
+  },
+
+  // Insights
+  insights: {
+    title: 'Sfaturile Tale de Dating',
+    subtitle: 'Sfaturi personalizate cu ajutorul AI',
+    tipsTitle: 'Sfaturi Personalizate',
+    tipsSubtitle: 'Sfaturi proaspete adaptate profilului tău',
+    profileInsight: 'Profilul Tău Relațional',
+    profileInsightDesc: 'Analiza AI a stilului tău relațional',
+    strengths: 'Punctele Tale Forte',
+    growthAreas: 'Zone de Dezvoltare',
+    weeklyChallenge: 'Provocarea Săptămânii',
+    refreshTips: 'Sfaturi Noi',
+    refreshInsight: 'Actualizează Analiza',
+    loading: 'Se generează...',
+    failedTips: 'Nu am putut încărca sfaturile. Încearcă din nou.',
+    failedInsight: 'Nu am putut încărca analiza. Încearcă din nou.',
+    categoryConversation: 'Conversație',
+    categoryFirstDate: 'Prima Întâlnire',
+    categoryRelationship: 'Relație',
+    categorySelfGrowth: 'Dezvoltare Personală',
+  },
+
+  // Explore
+  explore: {
+    title: 'Descoperă Profile',
+    subtitle: 'Descoperă noi potriviri potențiale',
+    noMoreProfiles: 'Nu mai sunt profile de explorat',
+    noMoreProfilesDesc: 'Ai văzut toate potrivirile curente. Verifică mai târziu pentru profile noi!',
+    refreshProfiles: 'Actualizează Potrivirile',
+    viewDetails: 'Vezi Detalii',
+    compatibility: 'Compatibilitate',
+    sharedValues: 'Valori Comune',
+    sharedInterests: 'Interese Comune',
+    nextProfile: 'Următorul',
+    previousProfile: 'Anterior',
+    profileOf: (current: number, total: number) => `${current} din ${total}`,
   },
 };

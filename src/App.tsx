@@ -4,13 +4,15 @@ import { UserProfile, MatchProfile, CompatibilityResult } from './lib/types';
 import { ProfileForm } from './components/ProfileForm';
 import { MatchCard } from './components/MatchCard';
 import { HoroscopeView } from './components/HoroscopeView';
+import { InsightsView } from './components/InsightsView';
+import { ExploreView } from './components/ExploreView';
 import { calculateCompatibility, generateMatchProfiles } from './lib/ai';
 import { useI18n, type Language } from './lib/i18n';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Skeleton } from './components/ui/skeleton';
-import { Heart, Moon, User, PencilSimple, Sparkle, ShieldCheck, Camera, Envelope, Globe } from '@phosphor-icons/react';
+import { Heart, Moon, User, PencilSimple, Sparkle, ShieldCheck, Camera, Envelope, Globe, Compass, Lightbulb } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { motion } from 'framer-motion';
@@ -23,6 +25,7 @@ function App() {
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
   const [activeTab, setActiveTab] = useState('matches');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [exploreDetailId, setExploreDetailId] = useState<string | null>(null);
 
   useEffect(() => {
     if (userProfile && compatibilityResults.length === 0) {
@@ -79,6 +82,11 @@ function App() {
 
   const toggleLanguage = () => {
     setLang(lang === 'en' ? 'ro' : 'en');
+  };
+
+  const handleExploreViewDetails = (matchId: string) => {
+    setExploreDetailId(matchId);
+    setActiveTab('matches');
   };
 
   const qualifiedMatches = compatibilityResults
@@ -177,22 +185,30 @@ function App() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md glass-tab rounded-xl p-1">
-            <TabsTrigger value="matches" className="flex items-center gap-2 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl glass-tab rounded-xl p-1">
+            <TabsTrigger value="matches" className="flex items-center gap-1.5 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg text-xs sm:text-sm">
               <Heart size={16} />
-              {t.tabs.matches}
+              <span className="hidden sm:inline">{t.tabs.matches}</span>
+            </TabsTrigger>
+            <TabsTrigger value="explore" className="flex items-center gap-1.5 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg text-xs sm:text-sm">
+              <Compass size={16} />
+              <span className="hidden sm:inline">{t.tabs.explore}</span>
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="flex items-center gap-1.5 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg text-xs sm:text-sm">
+              <Lightbulb size={16} />
+              <span className="hidden sm:inline">{t.tabs.insights}</span>
             </TabsTrigger>
             <TabsTrigger
               value="horoscope"
-              className="flex items-center gap-2 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg"
+              className="flex items-center gap-1.5 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg text-xs sm:text-sm"
               disabled={!userProfile.optInAstrology || !userProfile.birthDate}
             >
               <Moon size={16} />
-              {t.tabs.horoscope}
+              <span className="hidden sm:inline">{t.tabs.horoscope}</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg">
+            <TabsTrigger value="profile" className="flex items-center gap-1.5 data-[state=active]:bg-white/70 data-[state=active]:shadow-sm rounded-lg text-xs sm:text-sm">
               <User size={16} />
-              {t.tabs.profile}
+              <span className="hidden sm:inline">{t.tabs.profile}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -248,6 +264,17 @@ function App() {
                 </Button>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="explore">
+            <ExploreView
+              matches={qualifiedMatches}
+              onViewDetails={handleExploreViewDetails}
+            />
+          </TabsContent>
+
+          <TabsContent value="insights">
+            <InsightsView userProfile={userProfile} />
           </TabsContent>
 
           <TabsContent value="horoscope">

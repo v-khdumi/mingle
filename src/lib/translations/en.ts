@@ -18,6 +18,8 @@ export const en = {
   // Tabs
   tabs: {
     matches: 'Matches',
+    explore: 'Explore',
+    insights: 'Insights',
     horoscope: 'Horoscope',
     profile: 'Profile',
   },
@@ -342,6 +344,44 @@ export const en = {
     failedLoad: 'Failed to load horoscope',
     failedSynastry: 'Failed to load synastry',
     noBirthDate: 'This match has not provided their birth date',
+  },
+
+  // Insights
+  insights: {
+    title: 'Your Dating Insights',
+    subtitle: 'AI-powered tips personalized for you',
+    tipsTitle: 'Personalized Tips',
+    tipsSubtitle: 'Fresh advice tailored to your profile',
+    profileInsight: 'Your Relationship Profile',
+    profileInsightDesc: 'AI analysis of your relationship style',
+    strengths: 'Your Strengths',
+    growthAreas: 'Growth Areas',
+    weeklyChallenge: 'Weekly Challenge',
+    refreshTips: 'Get New Tips',
+    refreshInsight: 'Refresh Analysis',
+    loading: 'Generating insights...',
+    failedTips: 'Failed to load tips. Try again.',
+    failedInsight: 'Failed to load insight. Try again.',
+    categoryConversation: 'Conversation',
+    categoryFirstDate: 'First Date',
+    categoryRelationship: 'Relationship',
+    categorySelfGrowth: 'Self Growth',
+  },
+
+  // Explore
+  explore: {
+    title: 'Explore Profiles',
+    subtitle: 'Discover new potential matches',
+    noMoreProfiles: 'No more profiles to explore',
+    noMoreProfilesDesc: 'You\'ve seen all current matches. Check back later for new profiles!',
+    refreshProfiles: 'Refresh Matches',
+    viewDetails: 'View Details',
+    compatibility: 'Compatibility',
+    sharedValues: 'Shared Values',
+    sharedInterests: 'Shared Interests',
+    nextProfile: 'Next',
+    previousProfile: 'Previous',
+    profileOf: (current: number, total: number) => `${current} of ${total}`,
   },
 };
 
