@@ -119,7 +119,7 @@ export function ExploreView({ matches, onViewDetails }: ExploreViewProps) {
                 <div className="flex items-center justify-center gap-3 mt-4 mb-4">
                   <div className="relative w-20 h-20">
                     <svg className="w-full h-full -rotate-90">
-                      <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="5" className="text-muted/30" />
+                      <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="5" className="text-muted" opacity={0.3} />
                       <circle
                         cx="40" cy="40" r="34"
                         fill="none" stroke="currentColor" strokeWidth="5"
