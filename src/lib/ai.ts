@@ -19,7 +19,7 @@ async function callLLM(prompt: string, model: string, jsonMode: boolean): Promis
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       if (attempt > 0) {
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1)));
       }
 
       if (typeof window !== 'undefined' && window.spark?.llm && window.spark?.llmPrompt) {
@@ -255,10 +255,11 @@ Return ONLY valid JSON in this exact format:
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
   const parsed = safeParseJSON<ConsistencyResult>(response, { score: 80, flags: [], passed: true });
+  const score = typeof parsed.score === 'number' ? parsed.score : 80;
   return {
-    score: typeof parsed.score === 'number' ? parsed.score : 80,
+    score,
     flags: Array.isArray(parsed.flags) ? parsed.flags : [],
-    passed: typeof parsed.passed === 'boolean' ? parsed.passed : parsed.score >= 70,
+    passed: typeof parsed.passed === 'boolean' ? parsed.passed : score >= 70,
   };
 }
 
