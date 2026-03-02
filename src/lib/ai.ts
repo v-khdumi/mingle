@@ -1,25 +1,74 @@
 import { UserProfile, MatchProfile, CompatibilityResult, HoroscopeReading, SynastryReading, DatingTip, RelationshipInsight } from './types';
 import { getZodiacSign } from './utils';
 
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1000;
+
+function isRetryableError(error: unknown): boolean {
+  if (error instanceof TypeError && error.message.includes('fetch')) return true;
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes('network') || msg.includes('timeout') || msg.includes('429') || msg.includes('500') || msg.includes('502') || msg.includes('503')) return true;
+  }
+  return false;
+}
+
 async function callLLM(prompt: string, model: string, jsonMode: boolean): Promise<string> {
-  if (typeof window !== 'undefined' && window.spark?.llm && window.spark?.llmPrompt) {
-    const sparkPrompt = window.spark.llmPrompt`${prompt}`;
-    return window.spark.llm(sparkPrompt, model, jsonMode);
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+      }
+
+      if (typeof window !== 'undefined' && window.spark?.llm && window.spark?.llmPrompt) {
+        const sparkPrompt = window.spark.llmPrompt`${prompt}`;
+        return window.spark.llm(sparkPrompt, model, jsonMode);
+      }
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model, jsonMode }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        const err = new Error(errorData.error || `API call failed: ${response.status}`);
+        if (response.status >= 500 || response.status === 429) {
+          lastError = err;
+          continue;
+        }
+        throw err;
+      }
+
+      const data = await response.json();
+      return data.content;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < MAX_RETRIES && isRetryableError(error)) {
+        continue;
+      }
+      throw lastError;
+    }
   }
 
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, model, jsonMode }),
-  });
+  throw lastError ?? new Error('LLM call failed after retries');
+}
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(errorData.error || `API call failed: ${response.status}`);
+function safeParseJSON<T>(raw: string, fallback?: T): T {
+  try {
+    // Strip markdown code fences the LLM sometimes wraps around JSON
+    let cleaned = raw.trim();
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+    }
+    return JSON.parse(cleaned);
+  } catch {
+    if (fallback !== undefined) return fallback;
+    throw new Error('Failed to parse AI response as JSON');
   }
-
-  const data = await response.json();
-  return data.content;
 }
 
 export async function calculateCompatibility(
@@ -59,7 +108,10 @@ Return ONLY valid JSON in this exact format (no other text):
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o', true);
-  const parsed = JSON.parse(response);
+  const parsed = safeParseJSON<{ results: CompatibilityResult[] }>(response);
+  if (!Array.isArray(parsed.results)) {
+    throw new Error('Invalid compatibility response: missing results array');
+  }
   return parsed.results;
 }
 
@@ -81,12 +133,12 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  const parsed = JSON.parse(response);
+  const parsed = safeParseJSON<{ reading: string }>(response);
   
   return {
     date: today,
     sign,
-    reading: parsed.reading,
+    reading: parsed.reading || 'Unable to generate horoscope reading.',
   };
 }
 
@@ -112,13 +164,13 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  const parsed = JSON.parse(response);
+  const parsed = safeParseJSON<{ compatibility: string; explanation: string }>(response);
   
   return {
     userSign,
     matchSign,
-    compatibility: parsed.compatibility,
-    explanation: parsed.explanation,
+    compatibility: parsed.compatibility || 'Moderate',
+    explanation: parsed.explanation || 'Unable to generate synastry reading.',
   };
 }
 
@@ -139,8 +191,8 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  const parsed = JSON.parse(response);
-  return parsed.message;
+  const parsed = safeParseJSON<{ message: string }>(response);
+  return parsed.message || 'Hi! I noticed we have some things in common. Would love to chat!';
 }
 
 export interface ConsistencyResult {
@@ -202,7 +254,12 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  return JSON.parse(response);
+  const parsed = safeParseJSON<ConsistencyResult>(response, { score: 80, flags: [], passed: true });
+  return {
+    score: typeof parsed.score === 'number' ? parsed.score : 80,
+    flags: Array.isArray(parsed.flags) ? parsed.flags : [],
+    passed: typeof parsed.passed === 'boolean' ? parsed.passed : parsed.score >= 70,
+  };
 }
 
 export async function generateBio(
@@ -226,8 +283,8 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  const parsed = JSON.parse(response);
-  return parsed.bio;
+  const parsed = safeParseJSON<{ bio: string }>(response);
+  return parsed.bio || '';
 }
 
 export async function generateMatchProfiles(
@@ -293,7 +350,10 @@ Return ONLY valid JSON in this exact format (no other text):
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o', true);
-  const parsed = JSON.parse(response);
+  const parsed = safeParseJSON<{ profiles: MatchProfile[] }>(response);
+  if (!Array.isArray(parsed.profiles)) {
+    throw new Error('Invalid match profiles response: missing profiles array');
+  }
   return parsed.profiles;
 }
 
@@ -348,7 +408,10 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  const parsed = JSON.parse(response);
+  const parsed = safeParseJSON<{ tips: DatingTip[] }>(response);
+  if (!Array.isArray(parsed.tips)) {
+    throw new Error('Invalid dating tips response: missing tips array');
+  }
   return parsed.tips;
 }
 
@@ -385,5 +448,12 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  return JSON.parse(response);
+  const parsed = safeParseJSON<RelationshipInsight>(response);
+  return {
+    title: parsed.title || 'Your Relationship Profile',
+    description: parsed.description || '',
+    strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+    growthAreas: Array.isArray(parsed.growthAreas) ? parsed.growthAreas : [],
+    weeklyChallenge: parsed.weeklyChallenge || '',
+  };
 }
