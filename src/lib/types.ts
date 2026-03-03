@@ -101,3 +101,19 @@ export interface SynastryReading {
   compatibility: string;
   explanation: string;
 }
+
+export interface DatingTip {
+  id: string;
+  category: 'conversation' | 'firstDate' | 'relationship' | 'selfGrowth';
+  title: string;
+  content: string;
+  emoji: string;
+}
+
+export interface RelationshipInsight {
+  title: string;
+  description: string;
+  strengths: string[];
+  growthAreas: string[];
+  weeklyChallenge: string;
+}

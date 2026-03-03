@@ -1,25 +1,74 @@
-import { UserProfile, MatchProfile, CompatibilityResult, HoroscopeReading, SynastryReading } from './types';
-import { getZodiacSign } from './sampleData';
+import { UserProfile, MatchProfile, CompatibilityResult, HoroscopeReading, SynastryReading, DatingTip, RelationshipInsight } from './types';
+import { getZodiacSign } from './utils';
+
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1000;
+
+function isRetryableError(error: unknown): boolean {
+  if (error instanceof TypeError && error.message.includes('fetch')) return true;
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes('network') || msg.includes('timeout') || msg.includes('429') || msg.includes('500') || msg.includes('502') || msg.includes('503')) return true;
+  }
+  return false;
+}
 
 async function callLLM(prompt: string, model: string, jsonMode: boolean): Promise<string> {
-  if (typeof window !== 'undefined' && window.spark?.llm && window.spark?.llmPrompt) {
-    const sparkPrompt = window.spark.llmPrompt`${prompt}`;
-    return window.spark.llm(sparkPrompt, model, jsonMode);
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1)));
+      }
+
+      if (typeof window !== 'undefined' && window.spark?.llm && window.spark?.llmPrompt) {
+        const sparkPrompt = window.spark.llmPrompt`${prompt}`;
+        return window.spark.llm(sparkPrompt, model, jsonMode);
+      }
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model, jsonMode }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        const err = new Error(errorData.error || `API call failed: ${response.status}`);
+        if (response.status >= 500 || response.status === 429) {
+          lastError = err;
+          continue;
+        }
+        throw err;
+      }
+
+      const data = await response.json();
+      return data.content;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < MAX_RETRIES && isRetryableError(error)) {
+        continue;
+      }
+      throw lastError;
+    }
   }
 
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, model, jsonMode }),
-  });
+  throw lastError ?? new Error('LLM call failed after retries');
+}
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(errorData.error || `API call failed: ${response.status}`);
+function safeParseJSON<T>(raw: string, fallback?: T): T {
+  try {
+    // Strip markdown code fences the LLM sometimes wraps around JSON
+    let cleaned = raw.trim();
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+    }
+    return JSON.parse(cleaned);
+  } catch {
+    if (fallback !== undefined) return fallback;
+    throw new Error('Failed to parse AI response as JSON');
   }
-
-  const data = await response.json();
-  return data.content;
 }
 
 export async function calculateCompatibility(
@@ -59,7 +108,10 @@ Return ONLY valid JSON in this exact format (no other text):
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o', true);
-  const parsed = JSON.parse(response);
+  const parsed = safeParseJSON<{ results: CompatibilityResult[] }>(response);
+  if (!Array.isArray(parsed.results)) {
+    throw new Error('Invalid compatibility response: missing results array');
+  }
   return parsed.results;
 }
 
@@ -81,12 +133,12 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  const parsed = JSON.parse(response);
+  const parsed = safeParseJSON<{ reading: string }>(response);
   
   return {
     date: today,
     sign,
-    reading: parsed.reading,
+    reading: parsed.reading || 'Unable to generate horoscope reading.',
   };
 }
 
@@ -112,13 +164,13 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  const parsed = JSON.parse(response);
+  const parsed = safeParseJSON<{ compatibility: string; explanation: string }>(response);
   
   return {
     userSign,
     matchSign,
-    compatibility: parsed.compatibility,
-    explanation: parsed.explanation,
+    compatibility: parsed.compatibility || 'Moderate',
+    explanation: parsed.explanation || 'Unable to generate synastry reading.',
   };
 }
 
@@ -139,8 +191,8 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  const parsed = JSON.parse(response);
-  return parsed.message;
+  const parsed = safeParseJSON<{ message: string }>(response);
+  return parsed.message || 'Hi! I noticed we have some things in common. Would love to chat!';
 }
 
 export interface ConsistencyResult {
@@ -202,7 +254,13 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  return JSON.parse(response);
+  const parsed = safeParseJSON<ConsistencyResult>(response, { score: 80, flags: [], passed: true });
+  const score = typeof parsed.score === 'number' ? parsed.score : 80;
+  return {
+    score,
+    flags: Array.isArray(parsed.flags) ? parsed.flags : [],
+    passed: typeof parsed.passed === 'boolean' ? parsed.passed : score >= 70,
+  };
 }
 
 export async function generateBio(
@@ -226,6 +284,177 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const response = await callLLM(prompt, 'gpt-4o-mini', true);
-  const parsed = JSON.parse(response);
-  return parsed.bio;
+  const parsed = safeParseJSON<{ bio: string }>(response);
+  return parsed.bio || '';
+}
+
+export async function generateMatchProfiles(
+  userProfile: UserProfile
+): Promise<MatchProfile[]> {
+  const prompt = `You are an AI matchmaking engine for a dating platform. Based on the following user profile, generate 6-8 diverse, realistic potential match profiles. Each profile should be a plausible real person (with varied backgrounds, interests, and personalities) that could be a good or interesting match for this user.
+
+User Profile:
+${JSON.stringify({
+    name: userProfile.name,
+    values: userProfile.values,
+    interests: userProfile.interests,
+    lifestyle: userProfile.lifestyle,
+    industry: userProfile.industry,
+    education: userProfile.education,
+    languages: userProfile.languages,
+    workSchedule: userProfile.workSchedule,
+    lookingFor: userProfile.lookingFor,
+    loveLanguage: userProfile.loveLanguage,
+    optInAstrology: userProfile.optInAstrology,
+    optInSalary: userProfile.optInSalary,
+    optInAttractiveness: userProfile.optInAttractiveness,
+  }, null, 2)}
+
+Requirements:
+- Generate between 6 and 8 profiles
+- Each profile must have a unique "id" (use "ai-1", "ai-2", etc.)
+- Include a realistic name, a natural 1-2 sentence bio, and a plausible birthDate (YYYY-MM-DD format, ages 22-45) for every profile
+- Include values (3-4), interests (4-5), lifestyle (2-3), languages (1-3), workSchedule, industry, and education
+- Some profiles should share interests/values with the user (good matches), others should be complementary or different (variety)
+- Set ageConfirmed, photoUploaded, livenessVerified, consentGiven to true
+- Set optInAstrology, optInAttractiveness, optInSalary to reasonable varied booleans
+- If optInSalary is true, include a salaryRange (e.g., "€30k-50k")
+- Optionally include height and dietaryPreferences for some profiles
+
+Return ONLY valid JSON in this exact format (no other text):
+{
+  "profiles": [
+    {
+      "id": "string",
+      "name": "string",
+      "bio": "string",
+      "birthDate": "string (YYYY-MM-DD)",
+      "values": ["string"],
+      "interests": ["string"],
+      "lifestyle": ["string"],
+      "workSchedule": "string",
+      "industry": "string",
+      "education": "string",
+      "languages": ["string"],
+      "dietaryPreferences": "string or omit",
+      "height": "string or omit",
+      "salaryRange": "string or omit",
+      "optInAstrology": boolean,
+      "optInAttractiveness": boolean,
+      "optInSalary": boolean,
+      "ageConfirmed": true,
+      "photoUploaded": true,
+      "livenessVerified": true,
+      "consentGiven": true
+    }
+  ]
+}`;
+
+  const response = await callLLM(prompt, 'gpt-4o', true);
+  const parsed = safeParseJSON<{ profiles: MatchProfile[] }>(response);
+  if (!Array.isArray(parsed.profiles)) {
+    throw new Error('Invalid match profiles response: missing profiles array');
+  }
+  return parsed.profiles;
+}
+
+export async function generateDatingTips(
+  userProfile: UserProfile
+): Promise<DatingTip[]> {
+  const prompt = `Generate 4 personalized dating tips for the following user. Tailor the tips to their personality and relationship goals.
+
+User Info:
+- Looking for: ${userProfile.lookingFor || 'not specified'}
+- Love language: ${userProfile.loveLanguage || 'not specified'}
+- Values: ${userProfile.values.join(', ')}
+- Interests: ${userProfile.interests.join(', ')}
+- Personality: ${userProfile.introExtrovert || 'not specified'}
+- Conflict style: ${userProfile.conflictStyle || 'not specified'}
+
+Generate one tip per category: conversation, firstDate, relationship, selfGrowth.
+Each tip should be 2-3 sentences, actionable, and feel personal (not generic).
+
+Return ONLY valid JSON in this exact format:
+{
+  "tips": [
+    {
+      "id": "tip-1",
+      "category": "conversation",
+      "title": "string - short catchy title",
+      "content": "string - 2-3 sentence actionable tip",
+      "emoji": "string - single relevant emoji"
+    },
+    {
+      "id": "tip-2",
+      "category": "firstDate",
+      "title": "string",
+      "content": "string",
+      "emoji": "string"
+    },
+    {
+      "id": "tip-3",
+      "category": "relationship",
+      "title": "string",
+      "content": "string",
+      "emoji": "string"
+    },
+    {
+      "id": "tip-4",
+      "category": "selfGrowth",
+      "title": "string",
+      "content": "string",
+      "emoji": "string"
+    }
+  ]
+}`;
+
+  const response = await callLLM(prompt, 'gpt-4o-mini', true);
+  const parsed = safeParseJSON<{ tips: DatingTip[] }>(response);
+  if (!Array.isArray(parsed.tips)) {
+    throw new Error('Invalid dating tips response: missing tips array');
+  }
+  return parsed.tips;
+}
+
+export async function generateRelationshipInsight(
+  userProfile: UserProfile
+): Promise<RelationshipInsight> {
+  const prompt = `Create a personalized relationship profile insight for this user. This should be an AI-powered self-discovery analysis.
+
+User Profile:
+- Values: ${userProfile.values.join(', ')}
+- Love language: ${userProfile.loveLanguage || 'not specified'}
+- Looking for: ${userProfile.lookingFor || 'not specified'}
+- Conflict style: ${userProfile.conflictStyle || 'not specified'}
+- Personality: ${userProfile.introExtrovert || 'not specified'}
+- Personal space preference: ${userProfile.personalSpace || 'not specified'}
+- Pace in relationships: ${userProfile.paceInRelationship || 'not specified'}
+- Core value: ${userProfile.coreValue || 'not specified'}
+- Biggest flaw: ${userProfile.biggestFlaw || 'not specified'}
+
+Analyze their relationship style and provide:
+1. A descriptive title for their relationship personality type (e.g., "The Thoughtful Connector")
+2. A 2-3 sentence description of their relationship style
+3. 3 relationship strengths
+4. 2 areas for growth
+5. A weekly challenge to improve their dating life
+
+Return ONLY valid JSON in this exact format:
+{
+  "title": "string - their relationship personality type",
+  "description": "string - 2-3 sentences about their style",
+  "strengths": ["string", "string", "string"],
+  "growthAreas": ["string", "string"],
+  "weeklyChallenge": "string - an actionable weekly challenge"
+}`;
+
+  const response = await callLLM(prompt, 'gpt-4o-mini', true);
+  const parsed = safeParseJSON<RelationshipInsight>(response);
+  return {
+    title: parsed.title || 'Your Relationship Profile',
+    description: parsed.description || '',
+    strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+    growthAreas: Array.isArray(parsed.growthAreas) ? parsed.growthAreas : [],
+    weeklyChallenge: parsed.weeklyChallenge || '',
+  };
 }
