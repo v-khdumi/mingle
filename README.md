@@ -46,15 +46,14 @@ The template also:
 ### Prerequisites
 
 - An [Azure subscription](https://azure.microsoft.com/free/)
-- A GitHub account (for CI/CD integration)
+- A GitHub account with a [personal access token (classic)](https://github.com/settings/tokens) that has **repo** and **workflow** scopes (needed for automatic CI/CD integration)
 - Access to Azure OpenAI Service (you may need to [request access](https://aka.ms/oai/access))
 
 ### Setup steps
 
-1. **Deploy the infrastructure** — use Option A (recommended), Option B, or the Azure CLI command below.
-2. **Copy the deployment token** — from the Azure Portal, open the Static Web App resource → **Manage deployment token**.
-3. **Add the token as a GitHub secret** — go to your repo → **Settings → Secrets and variables → Actions** → create `AZURE_STATIC_WEB_APPS_API_TOKEN` with the deployment token value.
-4. **Push to `main`** — the GitHub Actions workflow (`.github/workflows/azure-deploy.yml`) will build and deploy automatically.
+1. **Create a GitHub personal access token** — go to [GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)](https://github.com/settings/tokens) and create a token with `repo` and `workflow` scopes.
+2. **Deploy the infrastructure** — use Option A (recommended), Option B, or the Azure CLI command below. When prompted, provide your **Repository URL** (e.g. `https://github.com/yourusername/mingle`) and **Repository Token** (the GitHub PAT from step 1).
+3. **Done!** — Azure automatically sets up GitHub integration, generates a CI/CD workflow, and deploys the app. Future pushes to `main` trigger automatic redeployment.
 
 ### Deploy with Azure CLI
 
@@ -69,10 +68,9 @@ az group create --name mingle-rg --location westeurope
 az deployment group create \
   --resource-group mingle-rg \
   --template-file azuredeploy.json \
-  --parameters azuredeploy.parameters.json
-
-# Retrieve the deployment token
-az staticwebapp secrets list --name mingle-app --resource-group mingle-rg
+  --parameters azuredeploy.parameters.json \
+  --parameters repositoryUrl=https://github.com/yourusername/mingle \
+               repositoryToken=ghp_YOUR_GITHUB_PAT
 ```
 
 🧹 Just Exploring?
